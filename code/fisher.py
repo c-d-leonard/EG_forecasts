@@ -98,5 +98,62 @@ def get_cov_param(Fisher):
 	
 	return Cov
 	
+def add_priors(Fisher, keys_list_Fisher, priors_file, keys_file_priors):
+    """ Add external priors to the Fisher matrix.
+    Fisher :: Fisher matrix from this calculation.
+    keys_list_Fisher :: ordering of parameters from Fisher matrix
+    priors_file :: file from which to load the priors *covariance* matrix 
+    keys_file_priors :: file from which to load the ordering of parameters for the priors matrix. """
+	
+    # Load the priors cov mat and invert to get the priors "Fisher" matrix
+    priors_cov = np.loadtxt(priors_file)
+    priors_Fish = np.linalg.pinv(priors_cov)
+	
+    # Load the parameter keys for the priors file
+    with open(keys_file_priors) as f:
+        keys_list_priors = f.readlines()
+    keys_list_priors = [x.strip() for x in keys_list_priors] 
+    
+    # Make a list which is the keys list for our Fisher matrix,
+    # removing parameters on which we don't set priors. We call this 
+    # the 'reordered' keys list for the priors Fisher matrix,
+    # such that it's in the same order as our Fisher keys list.
+    
+    keys_list_priors_reordered = [ keys_list_Fisher[i] for i in range(len(keys_list_Fisher)) if (keys_list_Fisher[i] in keys_list_priors) ]
+    
+    # Now, we reorder the priors Fisher matrix according to this, so that 
+    # the priors Fisher matrix has parameters in the same order as our
+    # Fisher matrix, just omitting columns and rows for parameters 
+    # for which we don't set priors.
+    
+    priors_Fisher_reorder = np.zeros((len(keys_list_priors), len(keys_list_priors)))
+    for i in range(len(keys_list_priors)):
+        for j in range(len(keys_list_priors)):
+            priors_Fisher_reorder[i,j] = priors_Fish[keys_list_priors.index(keys_list_priors_reordered[i]), keys_list_priors.index(keys_list_priors_reordered[j])]
+            
+    # Now get a list of the indices of the parameters which are in keys_list_Fisher
+    # but not in keys_list_priors - the parameters for which we do not set priors. 
+    no_priors_index = [keys_list_Fisher.index(elem) for elem in keys_list_Fisher if elem not in keys_list_priors]
+	
+    # Use this list of indices to iteratively add columns and rows of zeros 
+    # to the reordered priors Fisher matrix where we impose no prior.
+	
+    for i in range(len(no_priors_index)):
+        add_col = np.zeros(len(priors_Fisher_reorder[:,0]))
+        priors_Fisher_reorder = np.insert(priors_Fisher_reorder, no_priors_index[i], add_col, axis=1)
+        add_row = np.zeros(len(add_col)+1)
+        priors_Fisher_reorder = np.insert(priors_Fisher_reorder, no_priors_index[i], add_row, axis=0)
+		
+    # priors_Fisher_reorder should now be appropriately padded with zeros
+	
+    # Now just add the priors Fisher matrix to our Fisher matrix 
+    Fish_with_priors = priors_Fisher_reorder + Fisher
+            
+    return Fish_with_priors
+	
+	
+	
+	
+	
 	
 	

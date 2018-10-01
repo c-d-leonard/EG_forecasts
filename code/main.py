@@ -38,7 +38,7 @@ Pimax=100.
 rp_bin_edges = np.logspace(np.log10(rp0), np.log10(50.), 11)
 rp_bin_c = u.rp_bins_mid(rp_bin_edges)
 
-############ GET DATA COVARIANCE MATRICES ###########
+############ GET FISHER MATRICES ###########
 
 """########### Get the Fisher matrices in each case ############
 print "Getting Fisher matrix."
@@ -63,34 +63,48 @@ with open(f_keys) as f:
     
 keys_list = [x.strip() for x in keys_list] 
 
+############# ADD PRIORS ############### 
+
+# We will want to add external priors on certain parameters 
+# which are poorly constrained by the late-time observables we consider:
+# Omega_b, h, n_s, at least.
+
+# For now we are using not quite the right thing - priors from Planck
+# in the LCDM case. Also, the covariance matrices are not saved to file 
+# at sufficiently high precision.
+priors_file = '/home/danielle/Documents/CMU/Research/EG_comparison/txtfiles/priors_cov_LCDM_test.txt'
+keys_file_priors = '/home/danielle/Documents/CMU/Research/EG_comparison/txtfiles/keys_priors_LCDM_test.txt'
+
+Fisher_Eg = F.add_priors(Fisher_Eg, keys_list, priors_file, keys_file_priors)
+Fisher_jp = F.add_priors(Fisher_jp, keys_list, priors_file, keys_file_priors)
+
 ######## Output results ########
 
 # Set up sets of parameters we want to fix and vary in plotting:
 
 # Vary mu_0 and sigma_0
-params_var_0 = {'mu_0': 0., 'sigma_0':0.}
-params_fix_0 = {'sigma8':0.83,'b':2.2,'OmB':0.05, 'h':0.68, 'n_s':0.96, 'OmM': 0.3}
+params_var_0 = {'mu_0': 0., 'sigma_0':0., 'OmB':0.05, 'h':0.68, 'n_s':0.96}
+params_fix_0 = {'sigma8':0.83,'b':2.2,'OmM': 0.3}
 
 # Vary mu_0, sigma_0, and bias
-params_var_1 = {'mu_0': 0., 'sigma_0':0.,'b':2.2}
-params_fix_1 = {'sigma8':0.83,'OmB':0.05, 'h':0.68, 'n_s':0.96, 'OmM': 0.3}
+params_var_1 = {'mu_0': 0., 'sigma_0':0.,'b':2.2, 'OmB':0.05, 'h':0.68, 'n_s':0.96}
+params_fix_1 = {'sigma8':0.83, 'OmM': 0.3}
 
 # Vary mu_0, sigma_0, and sigma8
-params_var_2 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83}
-params_fix_2 = {'b':2.2, 'OmB':0.05, 'h':0.68, 'n_s':0.96, 'OmM': 0.3}
+params_var_2 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'OmB':0.05, 'h':0.68, 'n_s':0.96}
+params_fix_2 = {'b':2.2, 'OmM': 0.3}
 
 # Vary mu_0, sigma_0, bias and sigma8
-params_var_3 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'b':2.2}
-params_fix_3 = {'OmB':0.05, 'h':0.68, 'n_s':0.96, 'OmM': 0.3}
+params_var_3 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'b':2.2, 'OmB':0.05, 'h':0.68, 'n_s':0.96}
+params_fix_3 = { 'OmM': 0.3}
 
 # Vary mu_0, sigma_0, bias, sigma8, and OmegaM
-params_var_4 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'b':2.2, 'OmM': 0.3}
-params_fix_4 = {'OmB':0.05, 'h':0.68, 'n_s':0.96}
+params_var_4 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'b':2.2, 'OmM': 0.3, 'OmB':0.05, 'h':0.68, 'n_s':0.96}
+params_fix_4 = {}
 
 # Vary mu_0, sigma_0, bias, sigma8, OmegaM, OmegaB
-params_var_5 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'b':2.2, 'OmM': 0.3, 'OmB':0.05}
-params_fix_5 = {'h':0.68, 'n_s':0.96}
-
+#params_var_5 = {'mu_0': 0., 'sigma_0':0., 'sigma8':0.83, 'b':2.2, 'OmM': 0.3, 'OmB':0.05}
+#params_fix_5 = {'h':0.68, 'n_s':0.96}
 
 # Get all the stuff for individual ellipses and store them in these lists
 Evals = [0]*7; Evecs = [0]*7; rotate=[0]*7; label=[0]*7; color=[0]*7; linestyle=[0]*7;
@@ -140,7 +154,7 @@ label[6] = '$E_G$: Vary $\sigma_8$, b, $\Omega_M$'; color[6] = 'b'; linestyle[6]
 
 print Evals[6], Evecs[6], rotate[6]
 
-pp.ellipse_plots([0, 0], Evals, Evecs, rotate, label,color, linestyle, endfilename+'_fix_unconstrained')
+pp.ellipse_plots([0, 0], Evals, Evecs, rotate, label,color, linestyle, endfilename+'_LCDMpriors')
 
 print '\nTime for completion:', '%.1f' % (time.time() - a), 'seconds'
 
