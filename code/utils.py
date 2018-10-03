@@ -3,6 +3,10 @@ import scipy.integrate
 import pyccl as ccl
 
 
+np.set_printoptions(linewidth=240)
+	
+
+
 def average_in_bins(F_, R_, Rp_):
     """ This function takes a 1D function F_ of projected radius evaluated at projected radial points R_ and outputs the averaged values in bins with edges Rp_
     F_: 1D function of R_
@@ -94,4 +98,57 @@ def corr_mat(cov, endfilename):
 	np.savetxt('/home/danielle/Documents/CMU/Research/EG_comparison/txtfiles/joint_corrmat_'+endfilename+'.txt', corr_arr, fmt='%1.2f')
 	
 	return corr_arr
+	
+def linear_scale_cuts(dvec_nl, dvec_lin, cov, rpvec):
+	""" Gets the scales (and vector indices) which are excluded if we
+	are only keeping linear scales. We define linear scales such that 
+	chi^2_{nl - lin) <=1.
+	dvec_nl: data vector from nonlinear theory 
+	dvec_lin: data vector from linear theory
+	cov: data covariance
+	rpvec: vector of projected radial bin centers. """
+	
+	# Make a copy of these initial input things before they are changed,
+	# so we can compare and get the indices
+	dvec_nl_in = dvec_nl; dvec_lin_in = dvec_lin; cov_in = cov;
+	
+	# Check that data vector and covariance matrices have consistent dimensions.
+	if ( (len(dvec_nl)!=len(dvec_lin)) or (len(dvec_nl)!=len(cov[:,0])) 
+	or (len(dvec_nl)!=len(cov[0,:])) ):
+		raise(ValueError, "in linear_scale_cuts: inconsistent shapes of data vectors and / or covariance matrix.")
+		
+	# Cut elements of the data vector / covariance matrix until chi^2 <=1
+	inv_cov = np.linalg.pinv(cov)
+
+	while(True):
+		
+		# Get an array of all the individual elements which would go into 
+		# getting chi2
+		sum_terms = np.zeros((len(dvec_nl), len(dvec_nl)))
+		for i in range(len(dvec_nl)):
+			for j in range(len(dvec_nl)):
+				sum_terms[i,j] = (dvec_nl[i] - dvec_lin[i]) * inv_cov[i,j] * (dvec_nl[j] - dvec_lin[j])
+		
+		# Check if chi2<=1		
+		if (np.sum(sum_terms)<=1.):
+			break
+		else:
+			# Get the indices of the largest value in sum_terms.
+			inds_max = np.unravel_index(np.argmax(sum_terms, axis=None), sum_terms.shape)
+			# Remove this / these from the data vectors and the covariance matrix
+			if (inds_max[0] == inds_max[1]):
+				dvec_nl = np.delete(dvec_nl, inds_max[0])
+				dvec_lin = np.delete(dvec_lin, inds_max[0])
+				inv_cov = np.delete( np.delete(inv_cov, inds_max[0], axis=0), inds_max[0], axis=1)
+			else:
+				dvec_nl = np.delete(dvec_nl, inds_max)
+				dvec_lin = np.delete(dvec_lin, inds_max)
+				inv_cov = np.delete( np.delete( inv_cov, inds_max, axis=0 ), inds_max, axis=1)
+				
+	# Now we should have the final data vector with the appropriate elements cut.
+	# Use this to get the rp indices and scales we should cut.
+
+	ex_inds = [i for i in range(len(dvec_nl_in)) if dvec_nl_in[i] not in dvec_nl]
+	
+	return ex_inds
 	

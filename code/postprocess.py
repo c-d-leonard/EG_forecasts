@@ -83,7 +83,7 @@ def ellipse_plots(pars_plot, Evals, Evecs, rotate, label, color, linestyle, endf
 	ell.legend(fontsize=6, loc='lower right')
 	plt.title('Forecast constraints: LSST + DESI', fontsize=16)
 	plt.tight_layout()
-	plt.savefig('/home/danielle/Dropbox/CMU/Research/EG_comparison/plots/ellipse_'+endfilename+'.pdf')
+	plt.savefig('/home/danielle/Dropbox/CMU/Research/EG_comparison/plots/ellipse_'+endfilename+'.png')
 	plt.close()
 
 	"""#Get the lengthes of the two ellipse axes for the one sigma and two sigma ellipse

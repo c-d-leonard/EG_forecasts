@@ -17,16 +17,22 @@ Gnewt = 6.67408*10**(-11)
 c=2.99792458*10**(8)
 rho_crit = 3. * 10**10 * mperMpc / (8. * np.pi * Gnewt * Msun) / 10**12  # Msol h^2 / Mpc / pc^2, to yield Upsilon_gg in Msol h / pc^2
 
-def wgg(params, rp, lens, Pimax, endfilename):
+def wgg(params, rp, lens, Pimax, endfilename, nonlin = False):
 	""" Projects the 3D gg correlation function to get wgg 
 	params : dictionary of parameters at which to evaluate E_G
 	rp: a vector of projected radial distances at which to compute wgg
 	lens : label indicating which lens sample we are using
 	Pimax : maximum integration for wgg along LOS, Mpc/h
-	endfilename : tag for the files produced to keep track of the run."""
+	endfilename : tag for the files produced to keep track of the run.
+	nonlin (optional) : use nonlinear halofit correction """
 	
 	# Set up the fiducial cosmology.
-	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+	if nonlin==False:
+		matpow_label = 'linear'
+	else:
+		matpow_label = 'halofit'
+	
+	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum=matpow_label)
 	
 	# Get the distribution over the lens redshifts and save
 	#print "getting dNdzl"
@@ -44,7 +50,8 @@ def wgg(params, rp, lens, Pimax, endfilename):
 	
 	# Get the power spectrum at each zl
 	k = np.logspace(-4, 5, 40000) # units h / Mpc
-	Pkgg_ofzl = [ params['b']**2* ccl.linear_matter_power(cosmo_fid, k * params['h'], 1./ (1. + zl[zi])) * params['h']**3 for zi in range(len(zl))]
+	# We use the nonlin matter power function, but if nonlin=False this will still be the linear case.
+	Pkgg_ofzl = [ params['b']**2* ccl.nonlin_matter_power(cosmo_fid, k * params['h'], 1./ (1. + zl[zi])) * params['h']**3 for zi in range(len(zl))]
 
 	r_corr_gg = [fft.pk2xi(k, Pkgg_ofzl[zli]) for zli in range(len(zl))]
 	r = r_corr_gg[0][0]
@@ -74,7 +81,7 @@ def wgg(params, rp, lens, Pimax, endfilename):
 	
 	return wgg
 
-def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename):
+def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False):
     """ Takes wgg in Mpc/h and gets Upsilon_gg in Msol h / pc^2 for a given rp0. 
     params : dictionary of parameters at which to evaluate E_G
     rp_bin_edges : edges of projected radial bins
@@ -82,9 +89,11 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename):
     lens : label indicating which lens sample we are using
     Pimax : maximum integration for wgg along LOS, Mpc/h
     endfilename : tag for the files produced to keep track of the run.
+    nonlin (optional) : set to true if we want to use nonlinear halofit corrections.
     """
+    
     rp = np.logspace(np.log10(rp0), np.log10(50.), 50)
-    w_gg = wgg(params, rp, lens, Pimax, endfilename)
+    w_gg = wgg(params, rp, lens, Pimax, endfilename, nonlin=nonlin)
 
     rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
     wgg_interp = scipy.interpolate.interp1d(np.log(rp), np.log(w_gg))
@@ -98,16 +107,23 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename):
 	
     return Ups_gg_binned
 	
-def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename):
+def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False):
 	""" Gets Upsilon_gm in Msol h / pc^2 for a given rp0.
 	params : dictionary of parameters at which to evaluate E_G
 	rp_bin_edges : edges of projected radial bins
 	rp0 : scale at which we below which we cut out information for ADSD
 	lens : label indicating which lens sample we are using
-	endfilename : tag for the files produced to keep track of the run."""
+	endfilename : tag for the files produced to keep track of the run.
+	nonlin(optional) : set to true if we want to use halofit nonlinear correction. """
 	
 	# Set up the fiducial cosmology.
-	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+	
+	if nonlin==False:
+		matpow_label = 'linear'
+	else:
+		matpow_label = 'halofit'
+	
+	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum=matpow_label)
 	
 	# Get the distribution over the lens redshifts and save
 	(zl, dNdzl) = specs.get_dNdzL(params, lens)
@@ -220,21 +236,22 @@ def beta(params, lens):
 	
 	return beta_val
 
-def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename):
+def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False):
 	""" Returns the value of E_G given it's components.
 	params : dictionary of parameters at which to evaluate E_G
 	rp_bin_edges : edges of projected radial bins
 	rp0 : scale at which we below which we cut out information for ADSD
 	lens : label indicating which lens sample we are using
 	Pimax : maximum integration for wgg along LOS, Mpc/h
-	endfilename : tag for the files produced to keep track of the run."""
+	endfilename : tag for the files produced to keep track of the run.
+	nonlin (optional): set to true if we want to use halofit nonlinear corrections."""
 	
 	# Get beta
-	beta_val = beta(params, lens)
+	beta_val = beta(params, lens) # beta is definitionally linear so we don't need to pass it nonlin
 	# Get wgg and Upsilon_gg
-	Upgg = Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename)
+	Upgg = Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin = nonlin)
 	# Get Upsilon_gm
-	Upgm = Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename)
+	Upgm = Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin = nonlin)
 	
 	if (len(Upgm)!=len(Upgg)):
 		raise(ValueError, "Upsilon_gm and Upsilon_gg must be the same number of rp bins.");
@@ -246,21 +263,22 @@ def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename):
 	
 	return Eg
 	
-def jp_datavector(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename):
+def jp_datavector(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin=False):
 	""" Returns the value of E_G given it's components.
 	params : dictionary of parameters at which to evaluate E_G
 	rp_bin_edges : edges of projected radial bins
 	rp0 : scale at which we below which we cut out information for ADSD
 	lens : label indicating which lens sample we are using
 	Pimax : maximum integration for wgg along LOS, Mpc/h
-	endfilename : tag for the files produced to keep track of the run."""
+	endfilename : tag for the files produced to keep track of the run.
+	nonlin (optional): set to true if we want to use halofit nonlinear corrections."""
 	
 	# Get beta
 	beta_val = np.asarray(beta(params, lens))
 	# Get wgg and Upsilon_gg
-	Upgg = np.asarray(Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename))
+	Upgg = np.asarray(Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin = nonlin))
 	# Get Upsilon_gm
-	Upgm = np.asarray(Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename))
+	Upgm = np.asarray(Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin = nonlin))
 	
 	if (len(Upgm)!=len(Upgg)):
 		raise(ValueError, "Upsilon_gm and Upsilon_gg must be the same number of rp bins.");

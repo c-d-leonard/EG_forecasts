@@ -68,12 +68,11 @@ keys_list = [x.strip() for x in keys_list]
 # We will want to add external priors on certain parameters 
 # which are poorly constrained by the late-time observables we consider:
 # Omega_b, h, n_s, at least.
+# We are using priors obtained by Naren from chains reproducing the resutls of 
+# Planck 2015 DE / MG, chains by the UT Dallas group.
 
-# For now we are using not quite the right thing - priors from Planck
-# in the LCDM case. Also, the covariance matrices are not saved to file 
-# at sufficiently high precision.
-priors_file = '/home/danielle/Documents/CMU/Research/EG_comparison/txtfiles/priors_cov_LCDM_test.txt'
-keys_file_priors = '/home/danielle/Documents/CMU/Research/EG_comparison/txtfiles/keys_priors_LCDM_test.txt'
+priors_file = '/home/danielle/Documents/CMU/Research/EG_comparison/Planck_Chains_UT_Dallas/priors_cov_MG_smallmat.txt'
+keys_file_priors = '/home/danielle/Documents/CMU/Research/EG_comparison/Planck_Chains_UT_Dallas/Planck4.paramnames_smallmat.txt'
 
 Fisher_Eg = F.add_priors(Fisher_Eg, keys_list, priors_file, keys_file_priors)
 Fisher_jp = F.add_priors(Fisher_jp, keys_list, priors_file, keys_file_priors)
@@ -154,7 +153,7 @@ label[6] = '$E_G$: Vary $\sigma_8$, b, $\Omega_M$'; color[6] = 'b'; linestyle[6]
 
 print Evals[6], Evecs[6], rotate[6]
 
-pp.ellipse_plots([0, 0], Evals, Evecs, rotate, label,color, linestyle, endfilename+'_LCDMpriors')
+pp.ellipse_plots([0, 0], Evals, Evecs, rotate, label,color, linestyle, endfilename+'_MGpriors')
 
 print '\nTime for completion:', '%.1f' % (time.time() - a), 'seconds'
 
