@@ -92,7 +92,7 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     nonlin (optional) : set to true if we want to use nonlinear halofit corrections.
     """
     
-    rp = np.logspace(np.log10(rp0), np.log10(50.), 50)
+    rp = np.logspace(np.log10(rp0), np.log10(105.), 105)
     w_gg = wgg(params, rp, lens, Pimax, endfilename, nonlin=nonlin)
 
     rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
@@ -159,7 +159,7 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False):
 	#r = np.loadtxt('/home/danielle/Documents/CMU/Research/EG_comparison/txtfiles/xigm_z='+zlsave[0]+'_'+endfilename+'.txt', unpack=True)[0]
 	
 	# Define Pi (radial comoving separation in Mpc/h), which depends a bit on zl (don't want to go negative z)
-	Pipos = scipy.logspace(np.log10(0.0001), np.log10(100),50)
+	Pipos = scipy.logspace(np.log10(0.0001), np.log10(105.),105)
 	Pi_rev= list(Pipos)
 	Pi_rev.reverse()
 	index_cut = [next(j[0] for j in enumerate(Pi_rev) if j[1]<=(chil[zi])) for zi in range(len(zl))]
@@ -167,7 +167,7 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False):
 	Pi = [np.append(-np.asarray(Pi_neg[zi]), Pipos) for zi in range(len(zl))]
 
 	# Interpolate the correlation function in 2D (rp & Pi)
-	rp = np.logspace(np.log10(rp0), np.log10(50.), 50)  
+	rp = np.logspace(np.log10(rp0), np.log10(105.), 105)  
 	
 	corr_interp = [scipy.interpolate.interp1d(np.log(r), corr_gm[zi]) for zi in range(len(zl))]
 	corr_rp_term = [[ corr_interp[zi](np.log(np.sqrt(rp[rpi]**2 + Pi[zi]**2))) for zi in range(len(zl))] for rpi in range(len(rp))]
@@ -216,6 +216,95 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False):
 	Ups_gm_binned = u.average_in_bins(Ups_gm, rp[1:], rp_bin_edges)
 	
 	return Ups_gm_binned
+	
+def Delta_gm(params, rp_bin_edges, lens, src, endfilename, nonlin=False):
+	""" Gets Upsilon_gm in Msol h / pc^2 for a given rp0.
+	params : dictionary of parameters at which to evaluate E_G
+	rp_bin_edges : edges of projected radial bins
+	rp0 : scale at which we below which we cut out information for ADSD
+	lens : label indicating which lens sample we are using
+	endfilename : tag for the files produced to keep track of the run.
+	nonlin(optional) : set to true if we want to use halofit nonlinear correction. """
+	
+	# Set up the fiducial cosmology.
+	if nonlin==False:
+		matpow_label = 'linear'
+	else:
+		matpow_label = 'halofit'
+	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum=matpow_label)
+	
+	# Get the distribution over the lens redshifts and save
+	(zl, dNdzl) = specs.get_dNdzL(params, lens)
+
+	# Get the radial comoving distances (in Mpc/h) at the same zl
+	chil = ccl.background.comoving_radial_distance(cosmo_fid, 1./(1.+zl)) * params['h']
+	
+	# Get the power spectrum at each zl
+	k = np.logspace(-4, 5, 40000) # units h / Mpc
+	Pkgm_ofzl = [ params['b']*ccl.nonlin_matter_power(cosmo_fid, k * params['h'], 1./ (1. + zl[zi])) * params['h']**3 for zi in range(len(zl))]
+	
+	r_corr_gm = [fft.pk2xi(k, Pkgm_ofzl[zli]) for zli in range(len(zl))]
+	r = r_corr_gm[0][0]
+	corr_gm = [r_corr_gm[zli][1] for zli in range(len(zl))]
+	
+	# Define Pi (radial comoving separation in Mpc/h), which depends a bit on zl (don't want to go negative z)
+	Pipos = scipy.logspace(np.log10(0.0001), np.log10(100),50)
+	Pi_rev= list(Pipos)
+	Pi_rev.reverse()
+	index_cut = [next(j[0] for j in enumerate(Pi_rev) if j[1]<=(chil[zi])) for zi in range(len(zl))]
+	Pi_neg = [Pi_rev[index_cut[zi]:] for zi in range(len(zl))]
+	Pi = [np.append(-np.asarray(Pi_neg[zi]), Pipos) for zi in range(len(zl))]
+
+	# Interpolate the correlation function in 2D (rp & Pi)
+	rp = np.logspace(np.log10(0.01), np.log10(rp_bin_edges[-1]), 100)  
+	
+	corr_interp = [scipy.interpolate.interp1d(np.log(r), corr_gm[zi]) for zi in range(len(zl))]
+	corr_rp_term = [[ corr_interp[zi](np.log(np.sqrt(rp[rpi]**2 + Pi[zi]**2))) for zi in range(len(zl))] for rpi in range(len(rp))]
+
+	# Get the source redshift distribution
+	(zs, dNdzs) = specs.get_dNdzS(src)
+
+	# Equivalent comoving distances
+	chis = ccl.background.comoving_radial_distance(cosmo_fid, 1./(1.+zs)) * params['h']
+	
+	# Get the redshift at zl + Pi (2D list)
+	z_ofChi = u.z_ofcom_func(params)
+	z_Pi = [[z_ofChi(chil[zli] + Pi[zli][pi]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))] 
+
+	# Do the integral over zs
+	wSigC = specs.weights_times_SigC(params, src, zs, zl)
+	# Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
+	index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
+	 
+	zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * wSigC[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+
+	# Get the normalization for the weights
+	w = specs.weights(params, src,zs,zl)
+	zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+	
+	# Do the integral over Pi
+	Sigma = [ [ ccl.Sig_MG(cosmo_fid, 1. / (1. + z_Pi[zli][pi])) for pi in range(len(Pi[zli]))] for zli in range(len(zl))] 
+	
+	Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (zl[zli] + 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
+
+	# Do the integral over zl 
+	zl_int = [ scipy.integrate.simps(dNdzl * Pi_int[rpi], zl) for rpi in range(0,len(rp))]
+	
+	# Now do the averaging over rp:
+	# We need a more well-sampled rp vector for integration
+	rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
+	interp_zl_int = scipy.interpolate.interp1d(np.log(rp), np.log(np.asarray(zl_int)))
+	zl_int_finer = np.exp(interp_zl_int(np.log(rp_finer)))
+	
+	# Get the index of the previous rp vector which corresponds to this one:
+	index_rp = [next(j[0] for j in enumerate(rp_finer) if j[1]>= rp[rpi]) for rpi in range(len(rp))]
+	first_term = [ ( 2. / rp[rpi]**2 ) * scipy.integrate.simps(zl_int_finer[0:index_rp[rpi]] * rp_finer[0:index_rp[rpi]]**2, np.log(rp_finer[0:index_rp[rpi]])) for rpi in range(1, len(rp))]
+
+	Delta_gm = 4. * np.pi * (Gnewt * Msun) * (10**12 / c**2) / mperMpc * rho_crit * params['OmM'] * (np.asarray(first_term) - np.asarray(zl_int)[1:]) 
+
+	Delta_gm_binned = u.average_in_bins(Delta_gm, rp[1:], rp_bin_edges)
+	
+	return Delta_gm_binned
 	
 def beta(params, lens):
 	""" Gets beta.

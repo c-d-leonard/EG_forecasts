@@ -17,7 +17,7 @@ def get_Fisher_matrices(params_fid, params_fid_var, h_list, rp_bin_edges, rp_bin
 	endfilename : tag for the files produced to keep track of the run.
 	Nsamps : optional parameter for how many samples to draw to estimate the Eg covariance matrix."""
 	
-	# We ultimately need the Fisher matrix to be ordered. Let's put the keys in a list so we do a list comprehension
+	"""# We ultimately need the Fisher matrix to be ordered. Let's put the keys in a list so we do a list comprehension
 	keys_list = list(params_fid_var.keys())
 	
 	print "keys list=", keys_list
@@ -35,9 +35,13 @@ def get_Fisher_matrices(params_fid, params_fid_var, h_list, rp_bin_edges, rp_bin
 	
 	Fisher_eg = np.zeros((len(params_fid_var), len(params_fid_var)))
 	for a in range(0,len(params_fid_var)):
-		Fisher_eg[a, :] = Fisher_list_eg[a]
+		Fisher_eg[a, :] = Fisher_list_eg[a]"""
 		
 	Dcov_jp = jp.get_joint_covariance(params_fid, lens, src, rp_bin_edges, rp_bin_c, rp0, endfilename)
+	
+	np.savetxt('/home/danielle/Documents/CMU/Research/EG_comparison/data_for_Danielle/Danielle_cov_JP.dat', Dcov_jp)
+	exit()
+	
 	Dcov_jp_inv = np.linalg.pinv(Dcov_jp)
 	
 	print "Getting data derivatives, jp"

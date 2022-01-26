@@ -12,13 +12,12 @@ def average_in_bins(F_, R_, Rp_):
     F_: 1D function of R_
     R_: argument of F_
     Rp_: vector of bin edges in R_""" 
-    
+
     # Interpolate in a more well-sampled vector in R_
     R_f_ = scipy.logspace(np.log10(R_[0]), np.log10(R_[-1]), 10000)
     interp_F = scipy.interpolate.interp1d(np.log(R_), F_)
     F_f_ = interp_F(np.log(R_f_))
     
-
     indlow= [next(j[0] for j in enumerate(R_f_) if j[1]>=(Rp_[iR])) for iR in range(0, len(Rp_)-1)]
     indhigh= [next(j[0] for j in enumerate(R_f_) if j[1]>=(Rp_[iR+1])) for iR in range(0, len(Rp_)-1)]
 		
@@ -78,6 +77,7 @@ def z_ofcom_func(params):
 	
 	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	com_vec =  ccl.background.comoving_radial_distance(cosmo, 1./(1.+z_vec)) * params['h']
+	print "maxchi=", np.amax(com_vec)
 
 	z_of_com = scipy.interpolate.interp1d(com_vec, z_vec)
 
@@ -128,13 +128,16 @@ def linear_scale_cuts(dvec_nl, dvec_lin, cov, rpvec):
 		for i in range(len(dvec_nl)):
 			for j in range(len(dvec_nl)):
 				sum_terms[i,j] = (dvec_nl[i] - dvec_lin[i]) * inv_cov[i,j] * (dvec_nl[j] - dvec_lin[j])
-		
+				
+		#print "sum_terms=", sum_terms
+		#print "chi2=", np.sum(sum_terms)
 		# Check if chi2<=1		
 		if (np.sum(sum_terms)<=1.):
 			break
 		else:
 			# Get the indices of the largest value in sum_terms.
 			inds_max = np.unravel_index(np.argmax(sum_terms, axis=None), sum_terms.shape)
+			#print "inds_max =", inds_max
 			# Remove this / these from the data vectors and the covariance matrix
 			if (inds_max[0] == inds_max[1]):
 				dvec_nl = np.delete(dvec_nl, inds_max[0])

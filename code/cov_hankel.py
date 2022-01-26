@@ -174,7 +174,7 @@ def W_ofPi_lensing(params, lens, src):
     (zs, dNdzs) = sp.get_dNdzS(src)
 	
     # Define Pi (radial comoving separation in Mpc/h), which depends a bit on zl (don't want to go negative z)
-    Pipos = scipy.logspace(np.log10(0.1), np.log10(4000),4000)
+    Pipos = scipy.logspace(np.log10(0.1), np.log10(3000),4000)
     Pi_rev= list(Pipos)
     Pi_rev.reverse()
     Pi_neg = Pi_rev 
@@ -217,21 +217,26 @@ def DeltaPi_gm(params, lens, src):
 	return (DeltaPi1, DeltaPi2)
 	
 def DeltaPi_gg(params, lens):
-	""" Computes Delta Pi_1 and Delta Pi 2 as defined in Singh et al. 2016. 
-	for the gg covariance. 
-	params : dictionary of cosmological parameters
-	lens: keyword for lens distribution """
+    """ Computes Delta Pi_1 and Delta Pi 2 as defined in Singh et al. 2016. 
+    for the gg covariance. 
+    params : dictionary of cosmological parameters
+    lens: keyword for lens distribution """
 	
-	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
 	
-	if lens=='SDSS':
-		DeltaPi1 = 200. # From Singh et al. 2017
-		DeltaPi2 = 200.
-	elif lens=='DESI':
-		DeltaPi1 = (ccl.comoving_radial_distance(cosmo, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo, 1./ (1. +0.6))* params['h'] )
-		DeltaPi2 = DeltaPi1
+    if lens=='LOWZ':
+        DeltaPi1 = 200. # From Singh et al. 2017
+        DeltaPi2 = 200.
+    elif (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc' or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs'):
+        DeltaPi1 = (ccl.comoving_radial_distance(cosmo, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo, 1./ (1. +0.6))* params['h'] )
+        DeltaPi2 = DeltaPi1
+    elif (lens=='DESI_4MOST_ELGs' or lens=='DESI150pc_4MOST_ELGs' or lens=='DESI200pc_4MOST_ELGs' or lens=='DESI_4MOST_18000deg2_ELGs' or lens=='DESI_4MOST_18000deg2_LRGs'):
+        DeltaPi1 = (ccl.comoving_radial_distance(cosmo, 1./ (1. +1.5))* params['h'] ) - (ccl.comoving_radial_distance(cosmo, 1./ (1. +0.6))* params['h'] )
+        DeltaPi2 = DeltaPi1
+    else:
+        raise(ValueError, "That lens sample is not supported.")
 	
-	return (DeltaPi1, DeltaPi2)
+    return (DeltaPi1, DeltaPi2)
 	
 def DeltaPi_gmgg(params, lens, src):
 	""" Computes Delta Pi_2 for Delta Sigma gm x Delta Sigma gg
@@ -248,17 +253,26 @@ def DeltaPi_gmgg(params, lens, src):
 	# that we have a top hat window function in Pi for the DS_gg factor:
 	
 	# Get the indices of Pi we should be using for our integration
-	if lens=='SDSS':
+	if lens=='LOWZ':
 		# In this case we use chi(zl) - 100 Mpc/h and chi(zl) + 100 Mpc/h
 		indPilow = next(j[0] for j in enumerate(Pi) if j[1]>-100 )
 		indPihigh = next(j[0] for j in enumerate(Pi) if j[1]>100 )
-	elif lens=='DESI':
+	elif (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc' or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs'):
 		# Here we want Pi between z=0.6 and z= 1.0, the redshift extent 
 		# of the DESI LRGs
 		chi_diff_low = ccl.comoving_radial_distance(cosmo, 1./ (1. +0.6))* params['h']  - ccl.comoving_radial_distance(cosmo, 1./ (1. +0.77))* params['h'] 
 		chi_diff_high = ccl.comoving_radial_distance(cosmo, 1./ (1. +1.0))* params['h']  - ccl.comoving_radial_distance(cosmo, 1./ (1. +0.77))* params['h']
 		indPilow = next(j[0] for j in enumerate(Pi) if j[1]>chi_diff_low)
 		indPihigh = next(j[0] for j in enumerate(Pi) if j[1]>chi_diff_high )
+	elif (lens=='DESI_4MOST_ELGs' or lens=='DESI150pc_4MOST_ELGs' or lens=='DESI200pc_4MOST_ELGs' or lens=='DESI_4MOST_18000deg2_ELGs' or lens=='DESI_4MOST_18000deg2_LRGs'):
+		# Here we want Pi between z=0.6 and z= 1.5, the redshift extent 
+		# of the DESI LRGs
+		chi_diff_low = ccl.comoving_radial_distance(cosmo, 1./ (1. +0.6))* params['h']  - ccl.comoving_radial_distance(cosmo, 1./ (1. +1.0))* params['h'] 
+		chi_diff_high = ccl.comoving_radial_distance(cosmo, 1./ (1. +1.5))* params['h']  - ccl.comoving_radial_distance(cosmo, 1./ (1. +1.0))* params['h']
+		indPilow = next(j[0] for j in enumerate(Pi) if j[1]>chi_diff_low)
+		indPihigh = next(j[0] for j in enumerate(Pi) if j[1]>chi_diff_high )	
+	else:
+		raise(ValueError, "That lens sample is not supported.")
 		
 	Pi_integ = Pi[indPilow:indPihigh]
 	W_integ = W[indPilow:indPihigh]

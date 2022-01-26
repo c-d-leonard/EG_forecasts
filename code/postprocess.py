@@ -71,16 +71,16 @@ def ellipse_plots(pars_plot, Evals, Evecs, rotate, label, color, linestyle, endf
 	# Add each ellipse to the plot
 	for i in range(len(rotate)):
 		center = [pars_plot[0], pars_plot[1]]
-		ell_add=matplotlib.patches.Ellipse(center, 2*np.sqrt(onesigval*Evals[i][0]), 2*np.sqrt(onesigval*Evals[i][1]), rotate[i], edgecolor=color[i], facecolor='none', label=label[i], linestyle=linestyle[i])
+		ell_add=matplotlib.patches.Ellipse(center, 2*np.sqrt(onesigval*Evals[i][0]), 2*np.sqrt(onesigval*Evals[i][1]), rotate[i], edgecolor=color[i], facecolor='none', label=label[i], linestyle=linestyle[i], linewidth=2)
 		ell.add_patch(ell_add)
 		
-	ell.set_xlim(-0.4,0.4)
-	ell.set_ylim(-0.4,0.4)
+	ell.set_xlim(-0.6,0.6)
+	ell.set_ylim(-0.6,0.6)
 	ell.set_xlabel('$\Sigma_0$')
 	ell.set_ylabel('$\mu_0$')
 	ell.tick_params(axis='both', which='major', labelsize=12)
 	ell.tick_params(axis='both', which='minor', labelsize=12)
-	ell.legend(fontsize=6, loc='lower right')
+	ell.legend(fontsize=10, loc='upper left')
 	plt.title('Forecast constraints: LSST + DESI', fontsize=16)
 	plt.tight_layout()
 	plt.savefig('/home/danielle/Dropbox/CMU/Research/EG_comparison/plots/ellipse_'+endfilename+'.png')
@@ -143,11 +143,11 @@ def plot_covariance(cov, lens, src, endfilename):
 	src : label for source galaxies
 	endfilename : endfilename """
 	
-	corr = u.corr_mat(cov, endfilename)
+	#corr = u.corr_mat(cov, endfilename)
 	
 	plt.figure(figsize=(10, 10))
 	plt.rcParams["font.family"] = "serif"
-	plt.imshow(corr, aspect=1, interpolation='None')
+	plt.imshow(cov, aspect=1, interpolation='None')
 	#plt.clim(0,2.52)
 	plt.subplots_adjust(top=0.88)
 	#plt.suptitle("$\Upsilon_{gm}$, $\Upsilon_{gg}$, $\\beta$ covariance", fontsize='35')

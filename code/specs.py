@@ -12,7 +12,7 @@ c=2.99792458*10**(8)
 def get_dNdzL(params, lens_sample):
 	""" Imports the lens redshift distribution from file, normalizes, interpolates, and outputs at the z vector that's passed."""
 	
-	if (lens_sample=='DESI'):
+	if (lens_sample=='DESI' or lens_sample=='DESI_plus_20pc' or lens_sample=='DESI_plus_50pc' or lens_sample=='DESI_4MOST_LRGs' or lens_sample=='DESI150pc_4MOST_LRGs' or lens_sample=='DESI200pc_4MOST_LRGs' or lens_sample=='DESI_4MOST_18000deg2_LRGs'):
 		dNdz_file = 'DESI_redshifts_2col.txt'
 		
 		z, dNdz = np.loadtxt(dNdz_file, unpack=True)
@@ -27,6 +27,22 @@ def get_dNdzL(params, lens_sample):
 		norm = scipy.integrate.simps(dNdz_getnorm, z_highres)
 	
 		return  (z_highres, dNdz_getnorm / norm)
+		
+	elif (lens_sample=='DESI_4MOST_ELGs' or lens_sample=='DESI150pc_4MOST_ELGs' or lens_sample=='DESI200pc_4MOST_ELGs' or lens_sample=='DESI_4MOST_18000deg2_ELGs'):
+		dNdz_file = 'DESI_ELG_redshifts_2col.txt'
+		
+		z, dNdz = np.loadtxt(dNdz_file, unpack=True)
+		
+		interpolation = scipy.interpolate.interp1d(z, dNdz)
+	
+		# Create a well-sampled redshift vector to make sure we can get the normalization without numerical problems
+		z_highres = np.linspace(z[0], z[-1], 50)
+	
+		dNdz_getnorm = interpolation(z_highres)
+	
+		norm = scipy.integrate.simps(dNdz_getnorm, z_highres)
+	
+		return  (z_highres, dNdz_getnorm / norm)	
 		
 	elif (lens_sample=='LOWZ'):
 		
@@ -103,13 +119,20 @@ def shape_noise(params, src, lens):
     # Set up the fiducial cosmology.
     cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
 	
-    if (src=='LSST' and lens=='DESI'):
+    if (src=='LSST' and (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs')):
         sig_gam = 0.26
         n_s_amin = 26.
         chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+0.77))* params['h'] # FIX ME, USING EFFECTIVE REDSHIFT.
         n_s = n_s_amin * (466560000. / np.pi) / (4 * np.pi * chieff**2)
         shape_noise = sig_gam**2 / n_s
         return shape_noise
+    elif (src=='LSST' and (lens=='DESI_4MOST_ELGs' or lens=='DESI150pc_4MOST_ELGs' or lens=='DESI200pc_4MOST_ELGs' or lens=='DESI_4MOST_18000deg2_ELGs')):
+        sig_gam = 0.26
+        n_s_amin = 26.
+        chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+1.0))* params['h'] # FIX ME, USING EFFECTIVE REDSHIFT.
+        n_s = n_s_amin * (466560000. / np.pi) / (4 * np.pi * chieff**2)
+        shape_noise = sig_gam**2 / n_s
+        return shape_noise    
     elif (src=='SDSS' and lens=='LOWZ'):
         sig_gam = 0.21
         n_s_amin = 1.
@@ -130,8 +153,12 @@ def shot_noise(lens):
 	""" Calculate the shot noise associated with the lens sample.
 	lens: lens sample. """
 	
-	if (lens=='DESI'):
+	if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc' or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs'):
 		nbar = 3.2 * 10**(-4) 
+		shot_noise = 1./nbar
+		return shot_noise
+	elif (lens=='DESI_4MOST_ELGs' or 'DESI150pc_4MOST_ELGs' or 'DESI200pc_4MOST_ELGs' or 'DESI_4MOST_18000deg2_ELGs'):
+		nbar = 5.0 * 10**(-4)
 		shot_noise = 1./nbar
 		return shot_noise
 	elif (lens=='LOWZ'):
@@ -143,29 +170,89 @@ def shot_noise(lens):
 		return
 		
 def volume(params, src, lens):
-	""" Volume of the lens survey.
-	params : dictionary of fiducial parameters
-	src : label for the source samples
-	lens : label indicating lens survey
-	DPi : integral over single factor of window function, Singh et al. 
-	2017 eqn A25 """
+    """ Volume of the lens survey.
+    params : dictionary of fiducial parameters
+    src : label for the source samples
+    lens : label indicating lens survey
+    DPi : integral over single factor of window function, Singh et al. 
+    2017 eqn A25 """
 	
-	# Set up the fiducial cosmology.
-	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    # Set up the fiducial cosmology.
+    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
 	
-	if (src=='LSST' and lens=='DESI'):
-		area_deg = 3000. # degrees squared; area overlap of DESI with LSST
-		area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
-		# L_W is the top hat window function over the *lens* galaxies
-		L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
-		vol=area_com*L_W
-	elif (src=='SDSS' and lens=='LOWZ'):
-		area_deg = 7131.
-		area_com = area_deg* (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.28)) * params['h']) **2 # FIX ME, USIGN EFFECTIVE REDSHIFT.
-		L_W = 200. # From Singh et al. 2017
-		vol=area_com*L_W
+    if (src=='LSST' and lens=='DESI'):
+        area_deg = 3000. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W
+    elif (src=='SDSS' and lens=='LOWZ'):
+        area_deg = 7131.
+        area_com = area_deg* (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.28)) * params['h']) **2 # FIX ME, USIGN EFFECTIVE REDSHIFT.
+        L_W = 200. # From Singh et al. 2017
+        vol=area_com*L_W
+    elif (src=='LSST' and lens=='DESI_plus_20pc'):
+        area_deg = 3600. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W	
+    elif (src=='LSST' and lens=='DESI_plus_50pc'):
+        area_deg = 4500. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W		
+    elif (src=='LSST' and lens=='DESI_4MOST_ELGs'):
+        area_deg = 4000. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.5))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W	
+    elif (src=='LSST' and lens=='DESI_4MOST_LRGs'):
+        area_deg = 10500. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W    
+    elif (src=='LSST' and lens=='DESI150pc_4MOST_LRGs'):
+        area_deg = 12000. 
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W 
+    elif (src=='LSST' and lens=='DESI200pc_4MOST_LRGs'):
+        area_deg = 13500. 
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W 
+    elif (src=='LSST' and lens=='DESI_4MOST_18000deg2_LRGs'):
+        area_deg = 18000. 
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W        
+    elif (src=='LSST' and lens=='DESI150pc_4MOST_ELGs'):
+        area_deg = 5500. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.5))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W
+    elif (src=='LSST' and lens=='DESI200pc_4MOST_ELGs'):
+        area_deg = 7000. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.5))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W
+    elif(src=='LSST' and lens=='DESI_4MOST_18000deg2_ELGs'):
+        area_deg = 18000. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
+        # L_W is the top hat window function over the *lens* galaxies
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.5))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+        vol=area_com*L_W                                   		
 	
-	return vol
+    return vol
 	
 def weights(params, src, z_, z_l_):
 
@@ -174,8 +261,11 @@ def weights(params, src, z_, z_l_):
 	if (src == 'LSST'):
 		e_rms = 0.26
 		sig_e = (2. / 15.6) 
+	elif (src == 'SDSS'):
+		e_rms = 0.21
+		sig_e = 15.
 	else:
-		print "That source sample is not implemented."
+		print("That source sample is not implemented.")
 		exit()
 
 	weights = get_SigmaC_inv(params, z_, z_l_)**2/(sig_e**2 + e_rms**2)
@@ -189,8 +279,11 @@ def weights_times_SigC(params, src, z_, z_l_):
 	if (src == 'LSST'):
 		e_rms = 0.26
 		sig_e = (2. / 15.6) 
+	elif (src == 'SDSS'):
+		e_rms = 0.21
+		sig_e = 15.
 	else:
-		print "That source sample is not implemented."
+		print("That source sample is not implemented.")
 		exit()
 
 	weights_SigC = get_SigmaC_inv(params, z_, z_l_)/(sig_e**2 + e_rms**2)

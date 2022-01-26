@@ -297,7 +297,7 @@ def get_Cells(params, ell, lens, src):
 ############ CHECK BETA / UPSILON COVARIANCE ###########
 	
 def cov_beta_Ups(params, lens, src, rp_bin_edges, rp0, Pimax, hder, endfilename):
-	""" Get the covariance between Upsilon_{gg} or Upsilon_{gm} due to 
+	""" Get the covariance between beta and Upsilon_{gg} or Upsilon_{gm} due to 
 	shot noise. We believe this should be subdominant for LSST + DESI
 	but we need to check.
 	params: dictionary of cosmological parameters
@@ -365,7 +365,7 @@ def diff_P_beta(params, k, mu, lens):
 	# Set up a ccl cosmology
 	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
-	if lens=='DESI':
+	if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'):
 		zeff = 0.77
 	else: 
 		raise(ValueError, "We don't have support for that lens sample.")
@@ -398,7 +398,7 @@ def diff_P_Ups(params, k, mu, lens, src, rp_bin_edges, rp0, Pimax, hder, endfile
 	# Set up a ccl cosmology at the fiducial parameters
 	cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
-	if lens=='DESI':
+	if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'):
 		zeff = 0.77
 	else: 
 		raise(ValueError, "We don't have support for that lens sample.s")
@@ -465,7 +465,7 @@ def Pobs_covinv(params, k, mu, lens):
 	# Set up a ccl cosmology
 	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
-	if lens=='DESI':
+	if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'):
 		zeff = 0.77
 		nbar = 3.2 * 10**(-4)
 	else: 
