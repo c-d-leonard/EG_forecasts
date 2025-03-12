@@ -348,6 +348,8 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     Ups_gg_binned = u.average_in_bins(Ups_gg, rp, rp_bin_edges)
 	
     return Ups_gg_binned
+
+# test
 	
 def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None):
     """ Gets Upsilon_gm in Msol h / pc^2 for a given rp0.
