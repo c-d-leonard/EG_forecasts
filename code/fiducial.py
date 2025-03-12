@@ -336,7 +336,9 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     #plt.loglog(rp[1:], rp0**2 / np.asarray(rp[1:])**2 * w_gg[index_rp0], label='third term')
     #plt.legend()
     #plt.savefig('../plots/Upggtest_3terms.pdf')
-    #plt.close()
+    #plt.close()  
+
+    # test
 
     #plt.figure()
     #plt.loglog(rp[1:], Ups_gg)
@@ -454,9 +456,6 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     chilow = ccl.background.comoving_radial_distance(cosmo_fid, 1./(1.+0.4)) * params['h']
     chihigh = ccl.background.comoving_radial_distance(cosmo_fid, 1./(1.+1.0)) * params['h']
     Pi_extent = chihigh - chilow
-    #Pi_extent = 1500
-    #print('Pi_extent=', Pi_extent)
-    
 
     Pipos = scipy.logspace(np.log10(0.0001), np.log10(Pi_extent),300)
     Pi_rev= list(Pipos)
@@ -500,10 +499,8 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     # Slight fudge in letting OmegaL0 = 1 - OmegaM0
     Sigma = [ [Sigma_MG(cosmo_fid, params['sigma_0'], 1.0 - params['OmM'], 1. / (1. + z_Pi[zli][pi])) for pi in range(len(Pi[zli]))] for zli in range(len(zl))] 
 	
-    # There was a typo here previously. (1+zL) should be (1+z_Pi). Changing now - March 5 2025
-    Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (np.asarray(z_Pi[zli]) + 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
-    #Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (zl[zli]+ 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
-
+    # THIS IS WRONG - THE (1+ZL) TERM SHOULD BE (1+Z_PI). FIX ME.
+    Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (zl[zli] + 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
 
     # Do the integral over zl 
     zl_int = [ scipy.integrate.simps(dNdzl * Pi_int[rpi], zl) for rpi in range(0,len(rp))]
