@@ -5,9 +5,12 @@ import numpy as np
 import pylab as pl
 import sys
 import matplotlib.pyplot as plt
+import add_shape_noise as sn
+import utils as u
+import specs as sp
 
 # look at the covariance between upsilon and beta
-def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_dir=''):
+def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_dir='', add_shape_noise=False, lens=None, src=None):
     '''This computes and plots the correlation matrix
     a list of stats can be provided for correlation matrix evluation
     gg: galaxy-galaxy upsilon
@@ -31,7 +34,10 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
         #load gm if needed
         if(par in ['gm','gg']):
             if(par=='gm'):
-                gmfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
+                if add_shape_noise==True:
+                    gmfile = data_dir + 'ups_gm_with_SN_'+lens+'_'+src+'.dat'
+                else:
+                    gmfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
                 ups=np.loadtxt(gmfile)
             elif(par=='gg'):
                 ggfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-sel-All-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
@@ -39,10 +45,12 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
         
 
             #remove small scale upsilon not needed
-            ind=ups[:,0]>rmin
-            rp_ups=ups[ind,0]
+            #ind=ups[:,0]>rmin
+            # DL: actually, keep one more bin than the first one that doesn't contain rp0 because you might miss rp0 otherwise.
+            ind = next(j[0] for j in enumerate(ups[:,0]) if j[1]>rmin) -1
+            rp_ups=ups[ind:,0]
             xlab.append(rp_ups)
-            ups_jn=ups[ind,4:]
+            ups_jn=ups[ind:,4:]
             if(stat_jn.size==0):
                 stat_jn=np.copy(ups_jn)
             else:
@@ -63,7 +71,7 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
 
     means = np.zeros(len(stat_jn[:,0]))
     for i in range(len(stat_jn[:,0])):
-		means[i] = sum(stat_jn[i,:]) / N
+        means[i] = sum(stat_jn[i,:]) / N
 
     #plt.figure()
     #plt.loglog(rp_ups, means[0:15])
@@ -75,8 +83,8 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
 		
     cov = np.zeros((len(stat_jn[:,0]), len(stat_jn[:,0])))
     for i in range(len(stat_jn[:,0])):
-		for j in range(len(stat_jn[:,0])):
-			cov[i, j] = (N-1.)/N * sum((stat_jn[i,:] - means[i]) * (stat_jn[j,:] - means[j]))
+        for j in range(len(stat_jn[:,0])):
+            cov[i, j] = (N-1.)/N * sum((stat_jn[i,:] - means[i]) * (stat_jn[j,:] - means[j]))
     
 
     corr=np.copy(cov)
@@ -130,6 +138,73 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
 
 
     return {'corr':corr,'cov':cov}
+
+# Add a function that creates a version of the jacknife samples that also includes a draw from an independent shape noise matrix.
+
+def Ups_gm_samples_with_shapenoise(sim_vol, rp0, params, lens, src, data_dir):
+    """ author: Danielle
+    data_dir = where we are keeping the jacknife samples from simulation.
+    rp0 = the rp0 value for constructing upsilon
+    sim_vol is the volume of the simulation
+    lens is the lens sample, src is the src sample
+    params = parameters
+    """
+
+    # Load the jacknife samples and process
+    gmfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
+    ups=np.loadtxt(gmfile) # This has cols rp, ups mean, ups std, 'All', and the jacknife samples...
+    ups_jn=ups[:,4:]
+    rp = ups[:,0]
+    #print('rp=', rp)
+
+    # Get the bin edges for the rp bin centres:
+    rp_edg = u.rp_bin_edges_log(rp)
+    #print('rp_edg=', rp_edg)
+
+    Nsamps = len(ups_jn[0,:])
+    #print('Nsamps=', Nsamps)
+
+    # Now call the function to get Cov_SN:
+    Cov_SN_raw = sn.cov_SN_only(rp_edg, lens, src, params, rp0)
+    #print('shape Cov =', Cov_SN_raw.shape)
+
+    # Rescale this to bring this covariance (which uses the LSST_DESI volume) in line with the simulation volume:
+
+    vol_LSST_DESI = sp.volume(params, 'LSST', 'DESI')
+
+    Cov_SN = sim_vol / vol_LSST_DESI * Cov_SN_raw
+
+    np.savetxt(data_dir+'/Cov_shapenoise_simsvol_MpchUnits_'+lens+'_'+src+'.dat', Cov_SN)
+
+    #plt.figure()
+    #plt.imshow(np.log10(np.abs(Cov_SN)))
+    #plt.colorbar()
+    #plt.savefig('./cov_shapenoise_only.pdf')
+    #plt.close()
+
+    #print('shape again=', Cov_SN.shape)
+
+    # Set up the shape-noise multivariate Gaussian
+    means = np.zeros((len(Cov_SN[0,:])))
+
+    SN_samps = np.random.multivariate_normal(means, Cov_SN, Nsamps) # This should have dimensions Nsamps x rbins
+
+    ups_with_SN = np.zeros_like(ups_jn)
+    for i in range(0,Nsamps):
+        ups_with_SN[:,i] = ups_jn[:,i] + SN_samps[i, :]
+
+    ups_mean = np.zeros(len(rp)) 
+    ups_std = np.zeros(len(rp))
+    for i in range(0, len(rp)):
+        ups_mean[i] = np.mean(ups_with_SN[i,:])
+        ups_std[i] = np.std(ups_with_SN[i,:])
+
+
+    # Save these in the same format as the original file:
+    save_stuff = np.column_stack((rp, ups_mean, ups_std, ups_mean, ups_with_SN))
+
+    np.savetxt(data_dir+'/ups_gm_with_SN_'+lens+'_'+src+'.dat', save_stuff)
+    return
 
 if __name__=="__main__":
     data_dir='' #'data_for_Danielle/'

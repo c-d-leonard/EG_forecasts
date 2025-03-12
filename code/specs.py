@@ -12,8 +12,9 @@ c=2.99792458*10**(8)
 def get_dNdzL(params, lens_sample):
 	""" Imports the lens redshift distribution from file, normalizes, interpolates, and outputs at the z vector that's passed."""
 	
-	if (lens_sample=='DESI' or lens_sample=='DESI_plus_20pc' or lens_sample=='DESI_plus_50pc' or lens_sample=='DESI_4MOST_LRGs' or lens_sample=='DESI150pc_4MOST_LRGs' or lens_sample=='DESI200pc_4MOST_LRGs' or lens_sample=='DESI_4MOST_18000deg2_LRGs'):
-		dNdz_file = 'DESI_redshifts_2col.txt'
+	if (lens_sample=='DESI'):
+	#if (lens_sample=='DESI' or lens_sample=='DESI_plus_20pc' or lens_sample=='DESI_plus_50pc' or lens_sample=='DESI_4MOST_LRGs' or lens_sample=='DESI150pc_4MOST_LRGs' or lens_sample=='DESI200pc_4MOST_LRGs' or lens_sample=='DESI_4MOST_18000deg2_LRGs'):
+		dNdz_file = '../txtfiles/DESI_LRGs_dNdz_2024.dat'
 		
 		z, dNdz = np.loadtxt(dNdz_file, unpack=True)
 		
@@ -46,7 +47,7 @@ def get_dNdzL(params, lens_sample):
 		
 	elif (lens_sample=='LOWZ'):
 		
-		cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+		cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 		
 		
 		dNdz_file = 'SDSS_LRG_DR7dim_nofz.txt'
@@ -77,55 +78,182 @@ def get_dNdzL(params, lens_sample):
 	
 	
 def get_dNdzS(src_sample):
-	""" Returns the dNdz of the sources as a function of photometric redshift, as well as the z points at which it is evaluated."""
+    """ Returns the dNdz of the sources as a function of photometric redshift, as well as the z points at which it is evaluated.
+    This version convolves with an assumed Gaussian p(z_t, z_p) model with mean shift of zero and variance given by the SRD. """
 	
-	if (src_sample == 'LSST'):
-		z_min = 0.
-		z_max = 4.
-		alpha = 1.24
-		z0 = 0.51
-		beta = 1.01
+    if (src_sample == 'LSST'):
+        z_min = 0.
+        z_max = 5.0
 		
-		z = scipy.linspace(z_min, z_max, 50)
+        # LSST Year 1
+        z0 = 0.13
+        alpha = 0.78
+        sigz=0.05
+        deltaz=0.
+		
+        z = scipy.linspace(z_min, z_max, 100)
 
-		# dNdz takes form like in Smail et al. 1994
-		nofz_ = z**alpha * np.exp( - (z / z0)**beta)
+        # dNdz takes form like in Smail et al. 1994
+        #nofz_ = z**alpha * np.exp( - (z / z0)**beta)
+        nofz_ = z**2 * np.exp(- (z/z0)**alpha)
 	
-		norm = scipy.integrate.simps(nofz_, z)
-
-		return (z, nofz_ / norm)
-	elif (src_sample == 'SDSS'):
-		z_min = 0.
-		z_max = 2.
-		alpha 	= 	2.338
-		zs		=	0.303
+        norm = scipy.integrate.simps(nofz_, z)
 		
-		z = scipy.linspace(z_min, z_max, 50)
-		
-		# dNdz takes form like in Nakajima et al. 2011
-		nofz_ = (z / zs)**(alpha-1.) * np.exp( -0.5 * (z / zs)**2)
-		norm = scipy.integrate.simps(nofz_, z)
+        # Convolve with photo-z uncertainty
+        z_p, dNdz_p = dNdz_perturbed(z, nofz_/norm, sigz, deltaz)
 
-		return (z, nofz_ / norm)
+        return (z_p, dNdz_p)
 	
-	else:
-		raise(ValueError, src_sample+" is not a supported src sample tag at this time.")
-		return
+    elif (src_sample == 'LSSTY10'):
+        z_min = 0.
+        z_max = 5.0
+		
+        # LSST Year 10
+        z0 = 0.11
+        alpha = 0.68
+        sigz=0.05
+        deltaz=0.
+		
+        z = scipy.linspace(z_min, z_max, 100)
+
+        # dNdz takes form like in Smail et al. 1994
+        #nofz_ = z**alpha * np.exp( - (z / z0)**beta)
+        nofz_ = z**2 * np.exp(- (z/z0)**alpha)
+	
+        norm = scipy.integrate.simps(nofz_, z)
+		
+        # Convolve with photo-z uncertainty
+        z_p, dNdz_p = dNdz_perturbed(z, nofz_/norm, sigz, deltaz)
+
+        return (z_p, dNdz_p)
+
+    elif (src_sample == 'SDSS'):
+        z_min = 0.
+        z_max = 2.
+        alpha 	= 	2.338
+        zs		=	0.303
+		
+        z = scipy.linspace(z_min, z_max, 50)
+		
+        # dNdz takes form like in Nakajima et al. 2011
+        nofz_ = (z / zs)**(alpha-1.) * np.exp( -0.5 * (z / zs)**2)
+        norm = scipy.integrate.simps(nofz_, z)
+
+        return (z, nofz_ / norm)
+	
+    else:
+        raise(ValueError, src_sample+" is not a supported src sample tag at this time.")
+        return
+
+	
+def dNdz_perturbed(z, dNdz, sigma, deltaz):
+    """ Convolves the source dNdz with a Gaussian of scatter sigma and mean redshift bias deltaz"""
+
+    
+    if (np.abs(sigma)>10**(-12)):
+        
+        # Define a new redshift vector exactly the same as z just to facilitate the convolution
+        z_new = z
+    
+        Gauss = np.zeros((len(z_new), len(z)))
+        for zmi in range(0,len(z)):
+            Gauss[:,zmi] = scipy.stats.multivariate_normal.pdf(z_new, mean = z[zmi]+deltaz, cov=sigma)
+            
+        numerator = np.zeros(len(z_new))
+        for zni in range(0, len(z_new)):
+            numerator[zni] = scipy.integrate.simps(dNdz * Gauss[zni,:], z)
+    
+        denominator = scipy.integrate.simps(numerator, z_new)
+    
+        dNdz_new = numerator / denominator
+        
+    else:
+        # In the case where we only have a mean shift, we don't need to do the full integral and it's faster so just do that.
+        # Shift all the redshifts 
+        z_new_temp = z + deltaz 
+        
+        # If deltaz is positive, we now have a z that starts above 0. If deltaz is big, this starts to cause a problem for F calculations.
+        # Pad out the dndz below this:
+        if deltaz>0:
+            
+            # Check if z vec is linearly spaced, hopefully yes:
+            if np.abs((z_new_temp[1]-z_new_temp[0])-(z_new_temp[2]-z_new_temp[1]))>0.000001:
+                print(z_new_temp[1]-z_new_temp[0])
+                print(z_new_temp[2]-z_new_temp[1])
+                print('z is not linearly spaced, not set up for that')
+                exit() 
+            
+            # Get number of z's we want:
+            numz_pad = np.int(z_new_temp[0] / (z_new_temp[1]-z_new_temp[0]))
+            
+            padding_z = np.linspace(0,z_new_temp[0], numz_pad)
+            
+            z_new_temp = np.append(padding_z, z_new_temp)
+            dNdz = np.append(np.zeros(len(padding_z)), dNdz)
+        
+        if any(z_new_temp<0):
+            # Make sure that if this makes the redshifts negative we cut those.
+            ind = next(j[0] for j in enumerate(z_new_temp) if j[1]>=0)
+            z_new = z_new_temp[ind:]
+            dNdz_new_temp = dNdz[ind:]
+        else:
+            # Nothing to do here but just rename so we have uniformity outside this loop
+            z_new = z_new_temp
+            dNdz_new_temp = dNdz
+          
+        # Normalise
+        
+        norm = scipy.integrate.trapz(dNdz_new_temp, z_new)
+        
+        dNdz_new = dNdz_new_temp / norm
+   
+    return z_new, dNdz_new
+
 	
 def shape_noise(params, src, lens):
     """ Calculate the shape noise for the given source sample.
+    The units are (number of galaxies / (Mpc/h)^2) - this does not include the factor of area here.
     src: source sample. """
 	
     # Set up the fiducial cosmology.
-    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 	
-    if (src=='LSST' and (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs')):
+    if (src=='LSST' and lens=='DESI'):
         sig_gam = 0.26
-        n_s_amin = 26.
-        chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+0.77))* params['h'] # FIX ME, USING EFFECTIVE REDSHIFT.
+        #print('n_s is made very high for debugging!!')
+        #n_s_amin = 1000.
+        n_s_amin = 10. # LSST Y1 from SRD
+        chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+0.72))* params['h'] # z=0.72 is mean redshift of DESI LRG lenses
+        # 46656000 is 4 * 180**2 * 3600. 4 pi * (180/pi)**2 is the number of degrees is a sphere.
         n_s = n_s_amin * (466560000. / np.pi) / (4 * np.pi * chieff**2)
         shape_noise = sig_gam**2 / n_s
         return shape_noise
+        #if (src=='LSST' and (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs')):
+        #sig_gam = 0.26
+        #n_s_amin = 26.
+        #chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+0.77))* params['h'] # FIX ME, USING EFFECTIVE REDSHIFT OF LENS SAMPLE. this doesn't make that much sense.
+        # 4665600 is 4 * 180**2 * 3600. 4 pi * (180/pi)**2 is the number of degrees is a sphere.
+        #n_s = n_s_amin * (466560000. / np.pi) / (4 * np.pi * chieff**2)
+        #shape_noise = sig_gam**2 / n_s
+        #return shape_noise
+    elif (src=='LSSTY10' and lens=='DESI'):
+        sig_gam = 0.26
+        #print('n_s is made very high for debugging!!')
+        #n_s_amin = 1000.
+        n_s_amin = 27. # LSST Y10 from SRD
+        chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+0.72))* params['h'] # z=0.72 is mean redshift of DESI LRG lenses
+        # 46656000 is 4 * 180**2 * 3600. 4 pi * (180/pi)**2 is the number of degrees is a sphere.
+        n_s = n_s_amin * (466560000. / np.pi) / (4 * np.pi * chieff**2)
+        shape_noise = sig_gam**2 / n_s
+        return shape_noise
+        #if (src=='LSST' and (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs')):
+        #sig_gam = 0.26
+        #n_s_amin = 26.
+        #chieff = ccl.comoving_radial_distance(cosmo_fid, 1./ (1.+0.77))* params['h'] # FIX ME, USING EFFECTIVE REDSHIFT OF LENS SAMPLE. this doesn't make that much sense.
+        # 4665600 is 4 * 180**2 * 3600. 4 pi * (180/pi)**2 is the number of degrees is a sphere.
+        #n_s = n_s_amin * (466560000. / np.pi) / (4 * np.pi * chieff**2)
+        #shape_noise = sig_gam**2 / n_s
+        #return shape_noise
     elif (src=='LSST' and (lens=='DESI_4MOST_ELGs' or lens=='DESI150pc_4MOST_ELGs' or lens=='DESI200pc_4MOST_ELGs' or lens=='DESI_4MOST_18000deg2_ELGs')):
         sig_gam = 0.26
         n_s_amin = 26.
@@ -153,16 +281,19 @@ def shot_noise(lens):
 	""" Calculate the shot noise associated with the lens sample.
 	lens: lens sample. """
 	
-	if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc' or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs'):
-		nbar = 3.2 * 10**(-4) 
+	if (lens=='DESI'):
+	#if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc' or lens=='DESI_4MOST_LRGs' or lens=='DESI150pc_4MOST_LRGs' or lens=='DESI200pc_4MOST_LRGs' or lens=='DESI_4MOST_18000deg2_LRGs'):
+		nbar = 5.0 * 10**(-4) # Units (h/MPc)^3 # Zhou++2023
+		#print('nbar is arbitrarily changed for debugging!!')
+		#nbar = 10**(-3) # Units (h/MPc)^3
 		shot_noise = 1./nbar
 		return shot_noise
 	elif (lens=='DESI_4MOST_ELGs' or 'DESI150pc_4MOST_ELGs' or 'DESI200pc_4MOST_ELGs' or 'DESI_4MOST_18000deg2_ELGs'):
-		nbar = 5.0 * 10**(-4)
+		nbar = 5.0 * 10**(-4) # Units (h/MPc)^3
 		shot_noise = 1./nbar
 		return shot_noise
 	elif (lens=='LOWZ'):
-		nbar = 3.*10**(-4)
+		nbar = 3.*10**(-4) # Units (h/MPc)^3
 		shot_noise = 1./ nbar
 		return shot_noise
 	else:
@@ -178,13 +309,13 @@ def volume(params, src, lens):
     2017 eqn A25 """
 	
     # Set up the fiducial cosmology.
-    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 	
-    if (src=='LSST' and lens=='DESI'):
-        area_deg = 3000. # degrees squared; area overlap of DESI with LSST
-        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.77))*  params['h'] )**2 # FIX ME, USIGN EFFECTIVE REDSHIFT. 
-        # L_W is the top hat window function over the *lens* galaxies
-        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.6))* params['h'] ))
+    if ((src=='LSST' or src == 'LSSTY10') and lens=='DESI'):
+        area_deg = 5000. # degrees squared; area overlap of DESI with LSST
+        area_com = area_deg * (np.pi / 180.)**2 * (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.72))*  params['h'] )**2 # Using effective redshift of DESI LRGs
+        # L_W is the top hat window function over the *lens* galaxies 
+        L_W=  ((ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +1.0))* params['h'] ) - (ccl.comoving_radial_distance(cosmo_fid, 1./ (1. +0.4))* params['h'] ))
         vol=area_com*L_W
     elif (src=='SDSS' and lens=='LOWZ'):
         area_deg = 7131.
@@ -253,48 +384,50 @@ def volume(params, src, lens):
         vol=area_com*L_W                                   		
 	
     return vol
-	
+
+
 def weights(params, src, z_, z_l_):
 
-	""" Returns the inverse variance weights as a function of redshift. """
+    """ Returns the inverse variance weights as a function of redshift. """
     
-	if (src == 'LSST'):
-		e_rms = 0.26
-		sig_e = (2. / 15.6) 
-	elif (src == 'SDSS'):
-		e_rms = 0.21
-		sig_e = 15.
-	else:
-		print("That source sample is not implemented.")
-		exit()
+    if (src == 'LSST' or src=='LSSTY10'):
+        e_rms = 0.26
+        sig_e = (2. / 15.6) 
+    elif (src == 'SDSS'):
+        e_rms = 0.21
+        sig_e = 15.
+    else:
+        print("That source sample is not implemented.")
+        exit()
 
-	weights = get_SigmaC_inv(params, z_, z_l_)**2/(sig_e**2 + e_rms**2)
+    weights = get_SigmaC_inv(params, z_, z_l_)**2/(sig_e**2 + e_rms**2)
 
-	return weights	
+    return weights	
 
 def weights_times_SigC(params, src, z_, z_l_):
 
-	""" Returns the inverse variance weights as a function of redshift. """
+    """ Returns the inverse variance weights as a function of redshift. """
         
-	if (src == 'LSST'):
-		e_rms = 0.26
-		sig_e = (2. / 15.6) 
-	elif (src == 'SDSS'):
-		e_rms = 0.21
-		sig_e = 15.
-	else:
-		print("That source sample is not implemented.")
-		exit()
+    if (src == 'LSST' or src=='LSSTY10'):
+        e_rms = 0.26
+        sig_e = (2. / 15.6) 
+    elif (src == 'SDSS'):
+        e_rms = 0.21
+        sig_e = 15.
+    else:
+        print("That source sample is not implemented.")
+        exit()
 
-	weights_SigC = get_SigmaC_inv(params, z_, z_l_)/(sig_e**2 + e_rms**2)
+    weights_SigC = get_SigmaC_inv(params, z_, z_l_)/(sig_e**2 + e_rms**2)
 
-	return weights_SigC
+    return weights_SigC
     
 def get_SigmaC_inv(params, z_s_, z_l_):
 	""" Returns the theoretical value of 1/Sigma_c, (Sigma_c = the critcial surface mass density).
-	z_s_ and z_l_ can be 1d arrays, so the returned value will in general be a 2d array. """
+	z_s_ and z_l_ can be 1d arrays, so the returned value will in general be a 2d array. 
+	Returns in units of pc^2 / (Msol h)"""
     
-	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
     
 	com_s = ccl.background.comoving_radial_distance(cosmo, 1./(1.+z_s_)) * params['h']
 	com_l = ccl.background.comoving_radial_distance(cosmo, 1./(1.+z_l_)) * params['h']
@@ -323,7 +456,8 @@ def get_SigmaC_inv(params, z_s_, z_l_):
 	
 def get_SigmaC_inv_com(params, com_s, com_l, z_l_):
 	""" Returns the theoretical value of 1/Sigma_c, (Sigma_c = the critcial surface mass density).
-	z_s_ and z_l_ can be 1d arrays, so the returned value will in general be a 2d array. """
+	z_s_ and z_l_ can be 1d arrays, so the returned value will in general be a 2d array. 
+	Units of pc^2 / (Msol h)"""
 
 	# The dimensions of D_ls depend on the dimensions of z_s_ and z_l_
 	if ((hasattr(com_s, "__len__")==True) and (hasattr(com_l, "__len__")==True) and (com_s.size!=1) and (com_l.size!=1)):

@@ -1,0 +1,42 @@
+\subsection{Basic formalism}
+
+\subsection{N-body simulation and halo catalog}
+
+\subsection{HOD model and synthetic galaxy catalogs}
+
+We use the HOD model of Zheng et al. (2005). In this framework, it is assumed that central galaxies sit at the precise centers of their host halos and that the spatial distributions of satellite galaxies follow unbiased NFW profiles (Navarro et al. 1997). The occupation statistics of central galaxies are described by a Bernoulli distribution (since a halo can either have none or one central galaxies), with the first moment given by a step-like function parameterized as
+\begin{align}
+    \langle N_{\rm cen} | M \rangle &= \frac{1}{2}{\bigg [}1 + \text{erf}{\bigg(}\frac{\log M - \log M_{\rm min}}{\sigma_{\log M}}{\bigg)}{\bigg ]} \label{eqn:hod_cen}
+\end{align}
+Here, $M_{\rm min}$ is the minimum mass threshold above which a halo can host a central galaxy, while $\sigma_{\log M}$ represents the scatter in the relation between the virial mass of the dark matter halo and the baryonic mass of the central galaxy and thus controls the width of the transition from $\langle N_{\rm cen} \rangle = 0$ to $\langle N_{\rm cen} \rangle = 1$. 
+
+The occupation statistics of satellite galaxies are roughly Poisson, with the first moment given by a truncated power law parameterized as 
+\begin{align}
+    \langle N_{\rm sat} | M \rangle &= {\bigg (}\frac{M - M_0}{M_1}{\bigg )}^{\alpha}\vartheta(M - M_0) \label{eqn:hod_sat}
+\end{align}
+where $\alpha$ is the slope, $M_0$ is the low-mass cutoff, and $M_1$ is the characteristic mass at which $\langle N_{\rm sat} \rangle$ begins to follow a power law. The Heaviside function enforces that no satellite galaxies reside in halos with $M < M_0$.
+
+\subsection{Bayesian likelihood analysis}
+
+\begin{align}
+    \ln{\mathcal{L}(d|\vartheta)} = -\frac{1}{2} \sum_{\ell\ell^{'}} \ (C_{\ell}^{\rm th}(\vartheta) - C_{\ell}^{\rm d}) \ \text{Cov}(C_{\ell},C_{\ell^{'}})^{-1} \ (C_{\ell^{'}}^{\rm th}(\vartheta) - C_{\ell^{'}}^{\rm d})
+\end{align}
+where $C_{\ell}^{\rm th}(\vartheta)$ is the theoretical angular power spectrum for a given set of HOD parameters $\vartheta$, $C_{\ell}^{\rm d}$ is the observed angular power spectrum from the data, and $\text{Cov}(C_{\ell},C_{\ell^{'}})$ is the covariance matrix. Note that we only compute the Gaussian (``disconnected'' part) covariance matrix, as this is the dominant contribution on large scales.
+
+\subsection{Results}
+
+\begin{table}
+\centering
+\begin{tabular}{cllc} 
+Parameter & Prior  & Posterior & $\chi^2 / \text{d.o.f.}$\\
+\hline
+$\log{(M_{\rm min} / M_{\odot})}$ & $\in[9,16]$ & $A^{+B}_{-C}$ & x/y  \\
+$\sigma_{\log{M}}$ & $\in[0.001, 2]$ & $A^{+B}_{-C}$ & x/y  \\
+$\alpha$ & $ \in[0,2]$ & $A^{+B}_{-C}$ & x/y  \\
+$\log{(M_{0} / M_{\odot})}$ & $\in[9,16]$ & $A^{+B}_{-C}$ & x/y  \\
+$\log{(M_{1} / M_{\odot})}$ & $\in[9,16]$ & $A^{+B}_{-C}$ & x/y \\
+\hline
+\end{tabular}
+\caption{The second column lists the flat prior ranges used for the HOD model parameters, while the third column is the medians and $1\sigma$ confidence intervals of the posterior distributions. The last column describes the goodness-of-fit.}
+\label{tab:hod_mcmc}
+\end{table}
