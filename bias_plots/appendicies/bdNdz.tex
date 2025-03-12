@@ -1,0 +1,117 @@
+\section{Clustering Redshift Formalism}\label{app:dndz}
+
+\subsection{Detailed derivation}
+
+The angular cross-correlation function is related to the spatial cross-correlation function by the equation
+%
+\begin{align}\label{first}
+    {w}_{\rm ps}(\theta, z_{\rm i}) = \int_{0}^{\infty}&d\chi_1\int_{0}^{\infty}d\chi_2 \ \phi_{\rm p}(\chi_1) \phi_{\rm s}(\chi_2) \nonumber \\ 
+    &\times \ \xi_{\rm ps}{\Bigg (}\sqrt{\chi_1^2 + \chi_2^2 - 2\chi_1\chi_2\cos{\theta}},z_{\rm i}{\Bigg )}
+\end{align}
+%
+where the $\phi(\chi)$'s are the normalized radial distributions, and are related to the normalized redshift distributions $\phi(z)$ by $\phi(\chi) = \phi(z)H(z)/c$. Applying algebraic massaging to the argument of $\xi_{\rm ps}$, we have
+%
+\begin{align}\label{massage_R}
+&\sqrt[]{\chi_1^2 + \chi_2^2 - 2\chi_1\chi_2\cos{\theta}} = \nonumber \\
+&\sqrt[]{2(\frac{\chi_1 + \chi_2}{2})^2(1-\cos{\theta}) + \frac{(\chi_2 - \chi_1)^2}{2}(1+\cos{\theta})}
+\end{align}
+%
+Since we are restricting to $\theta \leq 1^{\circ}$, we can use the small-angle approximation\footnote{At $1^{\circ}$, this approximation is accurate to within $\approx 4 \times 10^{-9}$.}, $\cos{\theta} \approx 1 - \theta^2/2$, to simplify this expression.
+%
+\begin{align}\label{after_smallangle}
+    {w}_{\rm ps}(\theta, z_{\rm i}) = \int_{0}^{\infty}&d\chi_1\int_{0}^{\infty}d\chi_2 \ \phi_{\rm p}(\chi_1) \phi_{\rm s}(\chi_2) \nonumber \\
+    &\times \ \xi_{\rm ps}{\Bigg (}\sqrt{(\frac{\chi_1 + \chi_2}{2})^2\theta^2 + (\chi_2-\chi_1)^2},z_{\rm i}{\Bigg )}
+\end{align}
+%
+Furthermore, if the redshift bins are sufficiently narrow, we can treat the spectroscopic redshift distribution as a Dirac delta function $\phi_{\rm s}(z) \propto\delta^{D}(z - z_{\rm i})$ for each bin and perform the $d\chi_2$ integral directly. We also note that the $d\chi_1$ integral is, in practice, only evaluated over the range of redshifts for which $\phi_{\rm p}(z)$ is non-zero, $z_{\rm min}$ to $z_{\rm max}$. 
+%
+\begin{align}\label{after_dirac}
+    {w}_{\rm ps}(\theta, z_{\rm i}) \propto \int_{\chi_{\rm min}}^{\chi_{\rm max}} &d\chi \ \phi_{\rm p}(\chi) \nonumber \\
+    &\times \ \xi_{\rm ps}{\Bigg (}\sqrt{(\frac{\chi + \chi_{\rm i}}{2})^2\theta^2 + (\chi-\chi_{\rm i})^2},z_{\rm i}{\Bigg )}
+\end{align}
+%
+%\textcolor{red}{N.B. This is like Equation 10 in} \textcolor{blue}{ \href{https://arxiv.org/pdf/0802.2105.pdf}{Padmanabhan et al. 2009}} \textcolor{red}{but without the extra step of apparently letting $\chi + \chi_{\rm i} \approx 2\chi_{\rm i}$, which I didn't totally follow. I know $\chi_1 \approx \chi_2$ is the flat-sky approximation, but since the $(\chi_1 - \chi_2)$ term doesn't go to zero, I don't see why the $(\chi_1 + \chi_2)$ term goes to $2\chi_2$.}
+
+We now rewrite $\xi_{\rm ps}$ in terms of the underlying dark matter correlation function times the linear biases of the photometric and spectroscopic samples,
+%
+\begin{align}\label{add_biases}
+    {w}_{\rm ps}(\theta, z_{\rm i}) \propto & \int_{\chi_{\rm min}}^{\chi_{\rm max}} d\chi \ \phi_{\rm p}(\chi)b_{\rm p}(\chi)b_{\rm s} (\chi_{\rm i}) \nonumber \\
+    & \hspace{0.7cm} \times \ \xi_{\rm mm}{\Bigg (}\sqrt{(\frac{\chi + \chi_{\rm i}}{2})^2\theta^2 + (\chi-\chi_{\rm i})^2},z_{\rm i}{\Bigg )}
+\end{align}
+%
+
+Next, we apply the Limber approximation (generally valid for scales $\theta \leq 1^{\circ}$), which assumes that $\phi_{\rm p}$ and $b_{\rm p}$ do not vary appreciably over the characteristic scale defined by $\xi_{\rm mm}$, and thus can be taken out of the integral. Since the integrand is sharply peaked around $\chi = \chi_{\rm i}$, this gives 
+%
+\begin{align}\label{after_limber}
+    {w}_{\rm ps}(\theta, z_{\rm i}) &\propto \phi_{\rm p}(\chi_{\rm i})b_{\rm p}(\chi_{\rm i})b_{\rm s}(\chi_{\rm i}) \nonumber \\
+    & \hspace{0.7cm} \times \ \int_{\chi_{\rm min}}^{\chi_{\rm max}}d\chi \ \xi_{\rm mm}{\Bigg (}\sqrt{\chi_{\rm i}^2\theta^2 + (\chi-\chi_{\rm i})^2},z_{\rm i}{\Bigg )} \\
+    &= \phi_{\rm p}(z_{\rm i})\frac{H(z_{\rm i})}{c}b_{\rm p}(z_{\rm i})b_{\rm s}(z_{\rm i})I(\theta, z_{\rm i}) \label{eqn:full}
+\end{align}
+%
+where
+%
+\begin{equation}\label{defn_I}
+    I(\theta, z_{\rm i}) \equiv \int_{\chi_{\rm min}}^{\chi_{\rm max}}d\chi \ \xi_{\rm mm}{\Bigg (}\sqrt{\chi_{\rm i}^2\theta^2 + (\chi-\chi_{\rm i})^2},z_{\rm i}{\Bigg )}
+\end{equation}
+%
+can be computed directly from theory.
+
+\subsection{Understanding $I(z)$}
+To understand the shape of $I(z)$, it is useful to switch the integration variable from $d\chi$ to $dz = H(z)/c d\chi$, such that we have
+%
+\begin{equation}\label{defn_I_z}
+    I(\theta, z_{\rm i}) = \int_{z_{\rm min}}^{z_{\rm max}}dz \ \frac{c}{H(z)}\xi_{\rm mm}{\Bigg (}\sqrt{\chi_{\rm i}^2\theta^2 + (\chi-\chi_{\rm i})^2},z_{\rm i}{\Bigg )}
+\end{equation}
+%
+For linear scales, $\xi_{\rm mm}(r,z) = D(z)^2 \xi_{\rm mm}(r,z=0) \implies$
+\begin{align}\label{linear_growth}
+    I(\theta, z_{\rm i}) = \int_{z_{\rm min}}^{z_{\rm max}}dz \ \frac{cD(z)^2}{H(z)}\xi_{\rm mm}{\Bigg (}\sqrt{\chi_{\rm i}^2\theta^2 + (\chi-\chi_{\rm i})^2},0{\Bigg )}
+\end{align}
+%
+Since the integrand is sharply peaked around $\chi(z) = \chi_{\rm i}$,
+%
+\begin{equation}
+    I(\theta, z_{\rm i}) \approx \frac{cD(z_{\rm i})^2}{H(z_{\rm i})} \int_{z_{\rm min}}^{z_{\rm max}}dz \ \xi_{\rm mm}{\Bigg (}\sqrt{\chi_{\rm i}^2\theta^2 + (\chi-\chi_{\rm i})^2},0{\Bigg )}
+\end{equation}
+%
+This form tells us that $I(\theta, z_{\rm i}) \propto D(z_{\rm i})^2/H(z_{\rm i})$ multiplied by an integral that is only weakly dependent on $z_{\rm i}$ through the co-moving distance $\chi_{\rm i} = \chi(z_{\rm i})$. Furthermore, we note that if both biases are passively evolving $b(z) \propto D(z)^{-1}$, then Equation~\ref{eqn:full} reduces to a direct proportionality $w_{\rm ps}(\theta, z_{\rm i}) \propto \phi(z_{\rm i})$ for linear scales.
+
+\subsection{Normalization and scale-dependent bias}
+
+One of the principal challenges of determining $\phi(z)$ through cross-correlation analysis is the fact that each cross-correlation measurement is only reliable over the subset of the redshift range in which the two samples overlap. Hence, while it's often touted that only the redshift dependence of the various functions such as bias are required to constrain $\phi(z)$, as the many proportionality constants can be normalized away, the different measurements must first be connected piece-wise. Even when all nuisance parameters can be tracked and accounted for, the analysis is ultimately limited by the fact that the biases may be somewhat scale-dependent on the scales in which signal-to-noise is high for angular cross-correlations. Hence, the choice of which scales to integrate over, as discussed in Section~\ref{sec:dndz_pipe}, can lead to additional factors. In practice, we often need to integrate over different physical scales for different cross-correlations to optimize S/N (for example, VIPERS has high surface density but very small area, so the information lies mostly in smaller scales compared to CMASS and eBOSS), leading to some residual offsets between the measurements.
+
+%Hence we must replace $b_{\rm p}(z_{\rm i})$ with $b_{\rm p}(k,z_{\rm i})$ and integrate over the relevant angular scales to get $\bar{b}_{\rm p}(z_{\rm i})$ in Equation 14. We could do this by using the approximations
+%\begin{align}
+%    k &\sim \ell / \chi_{\rm i} \text{  (Limber approximation)} \\ 
+%    \ell &\sim 180^{\circ}/\theta
+%\end{align}
+%to convert an an integral over $\theta$ from $\theta_{\rm min}$ to $\theta_{\rm max}$ to an integral over $k$ from $(180^{\circ}/\theta_{\rm min})/\chi_{\rm i}$ to $(180^{\circ}/\theta_{\rm max})/\chi_{\rm i}$. \\ 
+As an example to probe how scale dependence can change the clustering-derived $\phi(z)$, we consider  the ``P-model'' (\citealt{Smith++07}, \citealt{Hamann++08}, \citealt{CresswellPercival09}), where the nonlinear correction to the bias is represented as an additional constant in the power spectrum that accounts for non-Poissonian shot noise associated with the 1-halo term (\citealt{PeacockSmith00}, \citealt{Seljak00}, \citealt{SchulzWhite06}, \citealt{Guzik++07}, \citealt{WechslerTinker18}),
+
+\begin{align}
+    P_{\rm g}(k) &\xrightarrow{} b_{\rm g}^2P_{\rm mm}(k) + \mathcal{P} \implies \\
+    \xi_{\rm ps}(r) &\xrightarrow{} b_{\rm p}b_{\rm s}\xi_{\rm mm}(r) + \xi_{\mathcal{P}}(r)
+\end{align}
+where $\xi_{\mathcal{P}}(r)$ is simply the Hankel transformed $\mathcal{P}$,
+\begin{align}
+    \xi_{\mathcal{P}}(r) &= \int \frac{dk}{k} \ \frac{k^3}{2\pi^2} \mathcal{P} \ j_0(kr) \\
+     &= \frac{\mathcal{P}}{2\pi^2}\int dk \ k^2 j_0(kr)
+\end{align}
+Hence, 
+\begin{align}
+    w_{\rm ps}(\theta, z_{\rm i}) &\propto \phi_{\rm p}(z_{\rm i})\frac{H(z_{\rm i})}{c}(b_{\rm p}(z_{\rm i})b_{\rm s}(z_{\rm i}){I}(\theta, z_{\rm i}) + J(\theta, z_{\rm i}))
+\end{align}
+where 
+\begin{align}
+    J(\theta, z_{\rm i}) \equiv \int_{\chi_{\rm min}}^{\chi_{\rm max}}d\chi \ \xi_{\mathcal{P}}{\Bigg (}\sqrt{\chi_{\rm i}^2\theta^2 + (\chi-\chi_{\rm i})^2},z_{\rm i}{\Bigg )}
+\end{align}
+Without knowing the value of $\mathcal{P}$, the exact normalization (and, indeed, the shape) of $\phi_{\rm p}(z)$ cannot be computed, since
+\begin{align}
+    \phi_{\rm p}(z_{\rm i}) &\propto \frac{{w}_{\rm ps}(\theta, z_{\rm i})\frac{c}{H(z_{\rm i})}}{b_{\rm p}(z_{\rm i})b_{\rm s}(z_{\rm i}){I}(\theta, z_{\rm i}) + {J}(\theta, z_{\rm i})}
+\end{align}
+Assuming that the scale-dependent term is sub-dominant, $J/I \ll 1$, we can expand in this ratio,
+\begin{align}
+    \phi_{\rm p}(z_{\rm i}) &\propto \frac{{w}_{\rm ps}(\theta, z_{\rm i})\frac{c}{H(z_{\rm i})}}{b_{\rm p}(z_{\rm i})b_{\rm s}(z_{\rm i}){I}(\theta, z_{\rm i})}\frac{1}{1 + \frac{J(\theta, z_{\rm i})}{b_{\rm p}(z_i)b_{\rm s}(z_i)I(\theta, z_{\rm i})}} \\
+    &\approx \frac{{w}_{\rm ps}(\theta, z_{\rm i})\frac{c}{H(z_{\rm i})}}{b_{\rm p}(z_{\rm i})b_{\rm s}(z_{\rm i}){I}(\theta, z_{\rm i})}(1 - \frac{J(\theta, z_{\rm i})}{b_{\rm p}(z_i)b_{\rm s}(z_i)I(\theta, z_{\rm i})} + \mathcal{O}^2) \nonumber
+\end{align}
+and thus obtain an estimate of the leading order effect of including scale-dependent bias for a given $\mathcal{P}$ and range of redshifts and angles.

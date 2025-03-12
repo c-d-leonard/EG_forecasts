@@ -1,0 +1,305 @@
+\documentclass[onecolumn,amsmath,aps,fleqn, superscriptaddress]{revtex4}
+ 
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{epsfig}
+\usepackage{subfigure}
+\usepackage{mathrsfs}
+\usepackage{longtable}
+\usepackage{enumerate} 
+\usepackage{multirow}
+\usepackage{color}
+
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    citecolor = {MidnightBlue},
+    linkcolor = {BrickRed},
+    urlcolor = {BrickRed}
+}
+
+\newcommand{\be}{\begin{eqnarray}}
+\newcommand{\ee}{\end{eqnarray}}
+
+\allowdisplaybreaks[1]
+ 
+\begin{document}
+
+\title{Comparing $E_G$ with a full combined analysis of its composite probes}
+
+\author{Danielle Leonard}   
+
+\maketitle
+
+\section{Introduction and Motivation}
+The $E_G$ statistic is a commonly-employed test of gravity. In its typical form, it combines a two-point measurement of galaxy clustering with a measurement of either galaxy-galaxy lensing or the cross-correlation of CMB lensing with galaxy positions, and with a measurement of the linear growth rate of structure from redshift-space distortions.
+
+$E_G$ is defined as a ratio of these probes such that on scales at which the galaxy bias is linear, it cancels from the ratio. This independence from galaxy bias is one of the main selling points of the statistic. However, $E_G$ also has downsides. Combining the covariance of the constituent probes of $E_G$ is not straightforward due to its nature as a ratio of noisy quantities. Furthermore, it is not clear that the $E_G$ statistic measured in practice provides the simple, bias-independent, model-indepenent test of gravity for which it was introduced.
+
+Given these drawbacks, one might ask the question of whether computing $E_G$ from a given series of datasets actually provides any additional information about deviations from GR that cannot be obtained in a full, combined-probes likelihood analysis of its constituent probes. That is, in which scenarios is the modified-gravity-related {\it information content} of $E_G$ greater than, less than, or comparable to, that of a full combined analysis?
+
+\section{Theory and Setup}
+In this section we first discuss the combined-probe analysis scenarios we will consider, and provide theoretical expressions in the fiducial GR scenario for the various relevant observables (including those which are required to compute $E_G$ itself). We then introduce the quasistatic parameterisation of deviations from GR and detail how the required observables are modeled within this framework. We finally describe how we calculate the observable covariance matrices in each analysis scenario.
+
+\subsection{Observational probes}
+We consider the observational definition of $E_G$ in real space, as originally presented in \cite{Reyes2010}:
+\begin{equation}
+E_G(r_p) = \frac{\Upsilon_{gm}(r_p)}{\beta \Upsilon_{gg}(r_p)}
+\label{egreyes}
+\end{equation}
+We will compare $E_G$ as defined in this way to:
+\begin{itemize}
+\item{A {\bf baseline combined-probes} analysis of $\Upsilon_{gm}(r_p)$, $\Upsilon_{gg}(r_p)$, and $\beta = f / b$. This represents the minimal joint-probes case which is comparible to a measurement of $E_G$.}
+\item{A more {\bf extended combined-probes} analysis of $\xi_{+}(r_p)$, $\xi_{-}(r_p)$, $w_{\rm gg}(r_p)$, $\gamma_{t}(r_p)$, and $\beta$. This case represents a typical `3x2pt' analysis as performed in e.g. \cite{DESY1kp2017}, plus $\beta$.}
+\end{itemize} 
+
+We now provide theoretical expressions for the observables required in each observational scenario.
+\paragraph*{Baseline}
+For both $E_G(r_p)$ and the baseline joint probe analysis, we require predictions for $\Upsilon_{gm}(r_p)$, $\Upsilon_{gg}(r_p)$ and $\beta$. 
+
+$\Upsilon_{gm}(r_p)$ and $\Upsilon_{gg}(r_p)$ are annular differential surface density observables for galaxy-galaxy lensing and projected galaxy clustering, introduced in \cite{Baldauf2010}. $\Upsilon_{gm}(r_p)$ is defined as:
+\begin{align}
+\Upsilon_{gm}(r_p) &= \Delta \Sigma_{gm}(r_p) - \left(\frac{r_p^0}{r_p}\right)^2 \Delta \Sigma_{gm}(r_p^0)
+\label{upgm}
+\end{align}
+where $r_p^0$ is a projected radial scale selected to remove uncertain small scale information, and $\Delta \Sigma_{gm}(r_p)$ is the differential surface mass density at projected radius $r_p$. It is defined as
+\begin{equation}
+\Delta \Sigma_{gm}(r_p) = \bar{\Sigma}_{gm}(<r_p) - \Sigma_{gm}(r_p)
+\label{DeltaSigma_literal}
+\end{equation}
+where $\Sigma_{gm}(r_p)$ is the projected surface mass density and $\bar{\Sigma}_{gm}(<r_p)$ is the same quantity averaged over scales less than or equal to $r_p$. $\Sigma_{gm}(r_p)$ can be calculated theoretically via
+\begin{equation}
+\Sigma_{gm}(r_p) = \rho_{\rm m} \int d \Pi \, (1 + \xi_{gm}(r_p, \Pi))
+\label{Sigma_gm}
+\end{equation}
+where $\rho_{\rm m}$ is the matter density of the universe in comoving coordinates, $\xi_{gm}$ is the 3D galaxy-matter correlation function, and $\Pi$ is the radial separation from the lens galaxy along the line of sight. 
+
+Equation \ref{upgm}, \ref{DeltaSigma_literal}, and \ref{Sigma_gm} offer a means to calculate $\Upsilon_{gm}(r_p)$ theoretically. However, in practice, $\Upsilon_{gm}(r_p)$ is measured observationally via galaxy-galaxy lensing: the correlation of background galaxy shapes with foreground galaxy position. In general relativity, $\Delta \Sigma(r_p)$ is related to the tangential shear of background galaxies about lens galaxies, called $\gamma_t(r_p)$, via
+\begin{equation}
+\Delta \Sigma(r_p) = \Sigma_{\rm c} \gamma_t(r_p)
+\label{deltasigma}
+\end{equation}
+for a single lens-source pair, where $\Sigma_{\rm c}$ is given by
+\begin{align}
+\Sigma_{\rm c} = \frac{c^2}{4\pi G} \frac{\chi_s}{(\chi_s - \chi_l)\chi_l (1+z_l)} =  \frac{c^2}{4\pi G} \frac{D_s}{D_{ls} D_l (1+z_l)^2}
+\label{sigmac}
+\end{align}
+where $D_s$ and $D_l$ are angular diameter distances to the source and lens galaxy respectively and we use comoving coordinates. Note that $D_{ls}$ is defined such that this expression is true, i.e. $D_{ls} \ne (D_s - D_l)$.
+
+Under modifications to gravity, however, the relationship between $\Delta \Sigma$ and $\gamma_t$ given in equation \ref{deltasigma} no longer holds. This is due to the fact that not only the clustering of matter, but also the lensing potential itself may be changed under modifications to GR. We therefore introduce a quantity $\widetilde{\Delta \Sigma}$ which we define as the measured quantity obtained via measuring tangential shear and and multiplying by averaged $\Sigma_{\rm c}$ in the typical way. Thus, in modified gravity, $\widetilde{\Delta \Sigma}$ may not correspond to the true physical projected differential surface mass density and acts instead as an analogous measured quantity. We also similarly define $\tilde{\Upsilon}_{gm}$, obtained by using $\widetilde{\Delta \Sigma}$ in equation \ref{upgm}. 
+
+$\tilde{\Upsilon}_{gm}(r_p)$ can be expressed as \cite{Leonard2015}:
+\begin{align}
+\tilde{\Upsilon}_{gm}&(r_p)=\frac{\rho_c \Omega_M^0}{\bar{w}}\frac{4\pi G}{c^2} \int dz_l \frac{dN}{dz_l} \int d\Pi \int_{z_l+\Pi}^{z_s^{\rm max}} dz_s \frac{dN}{dz_s} \Sigma_{\rm c}(z_s, z_l) \tilde{w}(z_s, z_l)\frac{(\chi_l(z_l)+\Pi)(\chi_s-\chi_l(z_l)-\Pi)(z_l+1)}{\chi_s} \nonumber \\& \times\Bigg[\frac{2}{r_p^2}\int_{r_p^0}^{r_p}r_p'dr_p' \xi_{gm}\left(\sqrt{(r_p')^2+\Pi^2}, \bar{z}_l\right)-\xi_{gm}\left(\sqrt{r_p^2+\Pi^2}, \bar{z}_l\right)+\left(\frac{r_p^0}{r_p}\right)^2\xi_{gm}\left(\sqrt{\left(r_p^0\right)^2+\Pi^2}, \bar{z}_l\right)\Bigg].
+\label{upgm_lensing}
+\end{align}
+where $\frac{dN}{dz_l}$ and  $\frac{dN}{dz_s}$ are respectively the lens and source galaxy distributions. (We discuss requirements on photometric redshifts of sources below in Section \ref{sec:something}.) $\tilde{w}(z_s,\,z_l)$ is the minimum variance weighting typically chosen for galaxy-galaxy lensing:
+\begin{equation}
+\tilde{w}(z_s,\, z_l) = \frac{1}{\Sigma_{\rm c}^2(z_s, z_l) \left(\sigma_\gamma^2 + \sigma_e(z_s)^2\right)}.
+\label{weights}
+\end{equation}
+Here $\sigma_\gamma$ is the shape noise and $\sigma_e$ is the per-source-galaxy measurement noise. $\bar{w}$ is the normalization over these weights:
+\begin{equation}
+\bar{w} = \int z_l \frac{dN}{dz_l} \int z_s \frac{dN}{dz_s} \tilde{w}(z_s,\, z_l).
+\label{wbar}
+\end{equation}
+Equation \ref{upgm_lensing} yields the same result as equations \ref{upgm}, \ref{DeltaSigma_literal}, and \ref{Sigma_gm} in GR.
+
+$\Upsilon_{gg}(r_p)$ is the equivalent annular differential surface density for projected galaxy clustering, given by \cite{Baldauf2010}
+\begin{equation}
+\Upsilon_{gg}(r_p) = \rho_c \left( \frac{2}{r_p^2} \int_{r_p^0}^{r_p} d r_p^\prime r_p^\prime w_{gg}(r_p^\prime) - w_{gg}(r_p) + \left(\frac{r_p^0}{r_p}\right)^2 w_{gg}(r_p^0) \right).
+\label{upgg}
+\end{equation}
+For convenience, we define a function similar in character to $\Delta \Sigma_{gm}(r_p)$:
+\begin{equation}
+\Delta \Sigma_{gg}(r_p) = \rho_c\left(\bar{w}_{gg}(< r_p) - w_{gg}(r_p)\right)
+\label{DeltaSigma_gg}
+\end{equation}
+such that 
+\begin{equation}
+\Upsilon_{gg}(r_p) = \Delta\Sigma_{gg}(r_p) - \left(\frac{r_p^0}{r_p}\right)^2 \Delta \Sigma_{gg}(r_p^0).
+\label{upgg_DS}
+\end{equation}
+
+The last component of the baseline joint probes analysis is $\beta(z)$, defined as 
+\begin{equation}
+\beta(z) = \frac{f(z)}{b}
+\label{beta}
+\end{equation}
+where $b$ is once-again the large scale, constant galaxy bias and $f(z)$ is the linear growth rate of structure, defined as $f = \frac{d \ln D(a)}{d\ln a}$. In GR $f(z)$ can be caluculaed by solving:
+\begin{equation}
+\frac{d^2 D(a)}{d (\ln a)^2} + \left(1 + \frac{1}{a H(a)}\frac{d(a H(a))}{d \ln a}\right)\frac{d D(a)}{d \ln(a)} - \frac{3}{2} \Omega_{\rm M} D(a) = 0.
+\label{beta}
+\end{equation}
+
+\paragraph*{Extended:}
+
+\subsection{$\mu$, $\Sigma$ parameterisation for modified gravity}
+
+{\color{cyan} We need to be able to compute correlation functions in modified gravity. Currently, the public MGcamb doesn't even have an option for computing power spectra with $\mu$, $\Sigma$. Agnes has her own code for this - is this something we should get her on board for? Or ask Phil what the status of this is in CCL?}
+
+In the $\mu$, $\Sigma$ quasistatic parameterisation of modified gravity, we have
+\begin{equation}
+\frac{d^2 D(a)}{d (\ln a)^2} + \left(1 + \frac{1}{a H(a)}\frac{d(a H(a))}{d \ln a}\right)\frac{d D(a)}{d \ln(a)} - \frac{3}{2} \Omega_{\rm M} \mu(a) D(a) = 0.
+\label{beta_mu}
+\end{equation}
+
+
+
+\subsection{Covariance matrices}
+\subsubsection{For combined-probe analysis}
+To forecast modified-gravity information content for a combined analysis of the constituent probes of $E_G$, we require the full covariance matrix of a data vector consisting of $\Upsilon_{gm}(r_p)$, $\Upsilon_{gg}(r_p)$ and $\beta$, where the former two are measured in projected radial bins. 
+
+We now detail the calculation of each required type of covariance matrix term.
+
+\vspace{2mm}
+
+\paragraph*{${\rm Cov}(\Upsilon_{gm}(r_p),\Upsilon_{gm}(r_p^\prime))$:} As we have seen above $\Upsilon_{gm}(r_p)$ is given via a difference of terms involving $\Delta \Sigma_{gm}(r_p)$. We therefore begin with the covariance of $\Delta \Sigma_{gm}(r_p)$, which is given by (see, e.g., \cite{Jeong2009, Singh2016})
+\begin{equation}
+{\rm Cov}\left[\Delta \Sigma_{gm}\left(r_p^i\right),\Delta \Sigma_{gm}\left(r_p^j\right) \right] = \nonumber \\ \frac{1}{4\pi f_{ \rm sky}} \left(\overline{\Sigma_c^{-2}}\right)^{-1}\int \frac{l dl}{2\pi} J_2\left(l\frac{r_p}{\chi\left(z_{{l}}^{\rm eff}\right)}\right) J_2\left(l\frac{r_p^\prime}{\chi\left(z_{{l}}^{\rm eff}\right)}\right)\Bigg[\left(C_{g\kappa}^{l}\right)^2 + \left(C_{gg}^l+\frac{1}{n_{l}}\right)\Bigg( C_{\kappa\kappa}^l + \frac{\sigma_{\gamma}^2}{n_{eff}} \Bigg)\Bigg],
+\label{DeltaSigmaCov}
+\end{equation}
+%\frac{2}{\left(\left(r_p^{i,h}\right)^2-\left(r_p^{i,l}\right)^2 \right)} \frac{2}{\left(\left(r_p^{j,h}\right)^2-\left(r_p^{j,l}\right)^2\right) } \int_{r_p^{i,l}}^{r_p^{i,h}} dr_p \, r_p \int_{r_p^{j,l}}^{r_p^{j,h}} dr_p^\prime \, r_p^\prime 
+
+where $r_p^{i,h}$ and $r_p^{i,l}$ represent the high and low edges of bin $r_p^i$ respectively (and similarly for bin $r_p^j$), $n_{l}$ is the surface of lens galaxies, $n_{eff}$ is the effective surface density of sources for the source sample in question (both in galaxies per steradian), and $\overline{\Sigma_c^{-2}}$ is given by:
+\begin{equation}
+\overline{\Sigma_c^{-2}} = \int dz_{l} \frac{dN}{dz_{l}} \int dz_{ph} \frac{dN}{dz_{ph}} \Sigma_c^{-2}(z_{l}, z_{ph}). 
+\label{wbar}
+\end{equation}
+
+Given then the covariance matrix for $\Delta \Sigma$ in $r_p$ bins, we return to the definition of $\Upsilon_{gm}(r_p)$ given in equation \ref{upgm} and find
+\begin{align}
+{\rm Cov}(\Upsilon_{gm}(r_p),\Upsilon_{gm}(r_p^\prime)) &= {\rm Cov}(\Delta \Sigma_{gm}(r_p),\Delta \Sigma_{gm}(r_p^\prime)) + \left(\frac{r_p^0}{r_p}\right)^2 \left(\frac{r_p^0}{r_p^\prime}\right)^2 {\rm Cov}(\Delta \Sigma_{gm}(r_p^0),\Delta \Sigma_{gm}(r_p^0)) \nonumber \\ &-\left(\frac{r_p^0}{r_p}\right)^2  {\rm Cov}(\Delta \Sigma_{gm}(r_p^0),\Delta \Sigma_{gm}(r_p^\prime))-\left(\frac{r_p^0}{r_p^\prime}\right)^2  {\rm Cov}(\Delta \Sigma_{gm}(r_p),\Delta \Sigma_{gm}(r_p^0)).
+\label{covupgm}
+\end{align}
+Finally we average in bins:
+\begin{align}
+{\rm Cov}(\Upsilon_{gm}(r_p^i), \Upsilon_{gm}(r_p^j)) = \frac{2}{\left(\left(r_p^{i,h}\right)^2-\left(r_p^{i,l}\right)^2 \right)} \frac{2}{\left(\left(r_p^{j,h}\right)^2-\left(r_p^{j,l}\right)^2\right) } \int_{r_p^{i,l}}^{r_p^{i,h}} dr_p \, r_p \int_{r_p^{j,l}}^{r_p^{j,h}} dr_p^\prime \, r_p^\prime {\rm Cov}(\Upsilon_{gm}(r_p),\Upsilon_{gm}(r_p^\prime))
+\label{covupgm_binned}
+\end{align}
+
+
+Technically $\Delta \Sigma_{gm}(r_p^0)$ is computed via splining $\Delta \Sigma_{gm}(r_p)$, which may introduce some additional covariance contributions. We check that neglecting this is a good approximation by drawing realizations of $\Delta \Sigma_{gm}(r_p)$ from ${\rm Cov}(\Delta \Sigma_{gm}(r_p^i),\Delta \Sigma_{gm}(r_p^j))$, performing the typical splining procedure on these samples as described in e.g. \cite{Blake2015}, and computing the covariance of these samples empirically. We find that the two methods agree to a X percent level.
+
+\vspace{2mm}
+
+\paragraph*{${\rm Cov}(\Upsilon_{gg}(r_p),\Upsilon_{gg}(r_p^\prime))$:}
+Following the derivations of \cite{Singh2016}, we can obtain the covariance matrix of $\Delta \Sigma_{gg}(r_p)$ in projected radial bins:
+\begin{align}
+{\rm Cov}&\left[\Delta \Sigma_{gg}\left(r_p^i\right),\Delta \Sigma_{gg}\left(r_p^j\right) \right] = \frac{1}{2\pi f_{ \rm sky}}  \int \frac{l dl}{2\pi} J_2\left(l\frac{r_p}{\chi\left(z_{{l}}^{\rm eff}\right)}\right) J_2\left(l\frac{r_p^\prime}{\chi\left(z_{{l}}^{\rm eff}\right)}\right) \left(C_{gg}^l+\frac{1}{n_{l}}\right)^2.
+\label{DeltaSigmaCov}
+\end{align}
+and in analogy with equation \ref{covupgm} above we find:
+\begin{align}
+{\rm Cov}(\Upsilon_{gg}(r_p),\Upsilon_{gg}(r_p^\prime)) &= {\rm Cov}(\Delta \Sigma_{gg}(r_p),\Delta \Sigma_{gg}(r_p^\prime)) + \left(\frac{r_p^0}{r_p}\right)^2 \left(\frac{r_p^0}{r_p^\prime}\right)^2 {\rm Cov}(\Delta \Sigma_{gg}(r_p^0),\Delta \Sigma_{gg}(r_p^0)) \nonumber \\ &-\left(\frac{r_p^0}{r_p}\right)^2  {\rm Cov}(\Delta \Sigma_{gg}(r_p^0),\Delta \Sigma_{gg}(r_p^\prime))-\left(\frac{r_p^0}{r_p^\prime}\right)^2  {\rm Cov}(\Delta \Sigma_{gg}(r_p),\Delta \Sigma_{gg}(r_p^0)).
+\label{covupgg}
+\end{align}
+We then obtain the binned covariance in direct analogy to equation \ref{covupgm_binned}.
+
+We again verify that using the $r_p$ which contains $r_p^0$ for relevant quantities in the above expression agrees with simulating the measurement of $\Upsilon_{gg}(r_p)$ many times and computing the covariance empirically; this time we find agreement to greater than Y percent.
+
+\vspace{2mm}
+
+
+\paragraph*{${\rm Cov}(\beta, \beta)$:}  Might want something better than the fitting function we are using now, it might not be relevant for all surveys.
+
+\vspace{2mm}
+
+\paragraph*{${\rm Cov}(\Upsilon_{gm}(r_p),\Upsilon_{gg}(r_p^\prime))$:} Following again the similar derivation of \cite{Singh2016} we find:
+\begin{align}
+{\rm Cov}&\left[\Delta \Sigma_{gm}\left(r_p^i\right),\Delta \Sigma_{gg}\left(r_p^j\right) \right] = \frac{1}{2\pi f_{ \rm sky}}\left(\overline{\Sigma_c^{-1}}\right)^{-1} \int \frac{l dl}{2\pi} J_2\left(l\frac{r_p}{\chi\left(z_{{l}}^{\rm eff}\right)}\right) J_2\left(l\frac{r_p^\prime}{\chi\left(z_{{l}}^{\rm eff}\right)}\right) C_{g\kappa}\left(C_{gg}^l+\frac{1}{n_{l}}\right).
+\label{DeltaSigma_gm_gg_cov}
+\end{align}
+and 
+\begin{align}
+{\rm Cov}(\Upsilon_{gm}(r_p),\Upsilon_{gg}(r_p^\prime)) &= {\rm Cov}(\Delta \Sigma_{gm}(r_p),\Delta \Sigma_{gg}(r_p^\prime)) + \left(\frac{r_p^0}{r_p}\right)^2 \left(\frac{r_p^0}{r_p^\prime}\right)^2 {\rm Cov}(\Delta \Sigma_{gm}(r_p^0),\Delta \Sigma_{gg}(r_p^0)) \nonumber \\ &-\left(\frac{r_p^0}{r_p}\right)^2  {\rm Cov}(\Delta \Sigma_{gm}(r_p^0),\Delta \Sigma_{gg}(r_p^\prime))-\left(\frac{r_p^0}{r_p^\prime}\right)^2  {\rm Cov}(\Delta \Sigma_{gm}(r_p),\Delta \Sigma_{gg}(r_p^0)).
+\label{covupgggm}
+\end{align}
+Again, we average over $r_p$ to get the binned quantity.
+
+%\begin{align}
+%{\rm Cov}(\Delta \Sigma_{gm}(r_p),\Delta \Sigma_{gg}(r_p^\prime)) &= \frac{2 \mathcal{A}(|\vec{r_p}-\vec{r_p^\prime}|)}{\mathcal{A}(r_p)\mathcal{A}(r_p^%\prime) L_W} \int d \Pi \bar{\rho} \frac{\overline{\Sigma}_c}{\Sigma_c(\chi_s, \chi_l + \Pi)} W^{\rm TH}(\Pi) \nonumber \\ & \int \frac{dk k}{2\pi} J_2(k r_p) J_2(k r_p^\prime) P_{g\delta}(k, z_l)\left(P_{gg}(k, z_l) + \frac{1}{n_g}\right)
+%\label{delgggmCov}
+%\end{align}
+%where $W^{\rm TH}$ is the top-hat window function for clustering, $P_{gg}$ and $P_{g\delta}$ are full 3D power spectra with units of volume, $n_g$ is the volume density of galaxies in the lens sample, $\bar{\rho}$ is {\bf the average density of matter in comoving coordinates?}, $L_W$ is the distance along the lines of sight of the measurement, and $\mathcal{A}$ factors are areas given by:
+%\begin{align}
+%\mathcal{A}(|\vec{r_p}-\vec{r_p^\prime}|) &= \int  \frac{dk k}{2\pi} J_0(k r_p) J_0 (k r_p^\prime) W(k)^2 \nonumber \\
+%\mathcal{A}(r_p) &= \int  \frac{dk k}{2\pi} J_0(k r_p) W(k)^2 
+%\label{areas}
+%\end{align}
+%where $W(k)$ is the fourier-transformed area window function of the survey given by
+%\begin{equation}
+%W(k) = 2\pi R^2 \frac{J_1(kR)}{kR}
+%\label{windowfourier}
+%\end{equation}
+%where $R$ is the physical distance corresponding to the radial extent of the survey. The covariance in bins should then be found by averaging over $r_p$ bins.  If using $\Upsilon$s, need to account for covariances between terms.
+
+\vspace{2mm}
+
+\paragraph*{${\rm Cov}(\Upsilon_{gm}(r_p),\beta)$ and ${\rm Cov}(\Upsilon_{gg}(r_p),\beta)$}
+
+Sukhdeep spoke to Uros, who claimed that the sample covariance between these quantities is zero, because $\beta$ is sensitive to line of sight modes while $\Upsilon_{gm}$ and $\Upsilon_{gg}$ are sensitive to projected modes. However, I think we would still have some covariance due to correlated galaxy shot noise. How do we calculate this?
+
+Checked with Elisabeth as to whether Cosmolike provides this functionality. It does not. She recommended getting these quantities using simulations and has found it painful trying to get these types of covariances in the past.
+
+%Sukhdeep was not initially sure how to do this, other than that if we just wanted the contribution of this covariance to $E_G$, one way might be to go back to the original definition in Fourier space and get the total covariance on $E_G$ from this expression, but this is not what we want (nor do I think it would be easy particularly).
+
+\subsubsection{For $E_G(r_p)$}
+To estimate the modified-gravity-related information content of $E_G(r_p)$, we need to be able to calculate a covariance matrix of a data vector consisting of $E_G$ in projected radial bins. I already have code set up to calculate matrices for ${\rm Cov}(\Upsilon_{gm}(r_p),\Upsilon_{gm}(r_p^\prime))$, ${\rm Cov}(\Upsilon_{gg}(r_p),\Upsilon_{gg}(r_p^\prime))$, and 
+${\rm Cov}(\beta, \beta)$ separately, as made clear above. I also have code which uses these covariance matrices to draw samples of $\Upsilon_{gm}(r_p)$, $\Upsilon_{gg}(r_p)$ and $\beta$ to then get ${\rm Cov}(E_G(r_p), E_G(r_p^\prime))$ using methods to estimate the covariance from a sample. But, this is only valid under the assumption that $\Upsilon_{gm}(r_p)$, $\Upsilon_{gg}(r_p)$ and $\beta$ are independent, ignoring their covariance. This is inconsistent with comparing $E_G$ to a full combined-probe analysis. When estimating errors on $E_G(r_p)$ from data, jacknife errors are typically used, which means that covariances are taken into account.
+
+If I can to calculate the full covariance matrix for the joint-probe analysis, as described above, this will also enable to calculation of an $E_G(r_p)$ covariance matrix which accounts for covariances. I would simply construct a multi-variate Gaussian from this covariance matrix and jointly draw samples of $\Upsilon_{gm}(r_p)$, $\Upsilon_{gg}(r_p)$, and $\beta$, combining them to create a population of $E_G(r_p)$ samples. I would then calculate ${\rm Cov}(E_G(r_p), E_G(r_p^\prime))$ using standard formulae for estimating variances and covariances from a sample as before, but this time covariances between the probes are accounted for.
+
+\section{Forecasting methodology}
+
+\subsection{Set-up}
+We consider two observational scenarios, one representing near-future or currently-available datasets and one representing upcoming datasets.
+
+The near-future scenario we consider assumes Dark Energy Survey Y5 sources and SDSS LOWZ ({\color{cyan} check overlap}) for lenses as well as for $\beta$. 
+
+The more futuristic scenario assumes LSST Y10 sources and DESI LRG for lenses and $\beta$.
+
+We consider the parameter space of $\vec{p} = \{\Omega_{\rm C},\, \Omega_{\rm B}, \, \sigma_8, n_s, b, \mu_0, \Sigma_0\}$ {\color{cyan} + observational systematic parameters like other bias parameters, IA...}. 
+
+Recall that if we assume the likelihood is a multivariate Gaussian, the Fisher matrix takes the form (see, for example, \cite{Bassett2011}):
+\begin{equation}
+\mathcal{F}_{ab} = \frac{\partial \langle \vec{d} \, \rangle}{\partial p_a} {\bf C}^{-1}  \frac{\partial \langle \vec{d} \, \rangle}{\partial p_b}\Bigg|_{\vec{p}_*} + \frac{1}{2} \mathrm{Tr}\left({\bf C}^{-1} \frac{\partial {\bf C}}{\partial p_a} {\bf C}^{-1} \frac{\partial {\bf C}}{\partial p_b} \right)\Bigg|_{\vec{p}_*},
+\label{Fisher_expand}
+\end{equation}
+
+
+%For the case of $E_G(r_p)$ the relevant Fisher matrix will be given by:
+%\begin{equation}
+%\mathcal{F}_{Eg} = \frac{\partial E_G(\vec{r}_p)}{\partial \vec{p}} {\rm Cov}^{-1} (E_G(\vec{r}%_p), E_G(\vec{r}_p)) \frac{\partial E_G(\vec{r}_p)}{\partial \vec{p}}
+%\label{Fisher_Eg}
+%\end{equation}
+
+%And for the combined probes case it will be given by:
+%\begin{equation}
+%\mathcal{F}_{\rm joint} = \frac{\partial \{ \Upsilon_{gm}(\vec{r}_p), \Upsilon_{gg}(\vec{r}_p), %\beta \} }{\partial \vec{p}} {\rm Cov}_{\rm joint}^{-1} \frac{\partial \{ \Upsilon_{gm}(\vec{r}%_p), \Upsilon_{gg}(\vec{r}_p), \beta \}}{\partial \vec{p}}
+%\label{Fisher_joint}
+%\end{equation}
+%$\mathcal{F}_{Eg}$ and $\mathcal{F}_{\rm joint}$ will both have dimensions $n+m$, the number of gravity parameters plus parameters over which we will marginalize. We then in each case invert the Fisher matrix and consider only the sub-matrices associated to the gravity parameters to evaluate which methodology provides more information about deviations from GR.
+
+\subsection{Modified-gravity information content: defining a figure of merit}
+We define a `modified gravity figure of merit' analogous to that presented in \cite{Albrecht2006} for dark energy, which is equal to the area inside the forecast $1\sigma$ constrain contour in the $\mu_0$, $\Sigma_0$ plane, marginalizing over all other parameters. 
+
+
+\section{Results}
+
+\paragraph{Requirements on source photo-z}
+Source galaxies for a weak lensing measurement will typically require photometric redshifts. In our forecasts, we have assumed a source galaxy redshift distribution of the form given by equation \ref{dNdz}. We estimate the level of uncertainty permissible on the mean and variance of this distribution by varying the parameters of \ref{dNdz} to adjust these quantities and comparing the level of difference in predicted observables with the forecast statistical uncertainty. We find that for the observational scenario considered, the mean of the source redshift distribution must be known to X and the variance must be known to Y.
+
+\section{Discussion and Conclusions}
+
+
+\bibliographystyle{mnras}
+\bibliography{refs} % if your bibtex file is called example.bib
+
+%-------------------------------------------------------------------------------
+
+
+%-------------------------------------------------------------------------------
+
+\end{document}

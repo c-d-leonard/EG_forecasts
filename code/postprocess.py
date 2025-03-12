@@ -111,9 +111,9 @@ def ellipse_plots(pars_plot, Evals, Evecs, rotate, label, color, linestyle, endf
 	plt.rc('font', family='serif', size=14)
 	ell=ellipse.add_subplot(111, aspect='equal')
 	#Which axis we pick for "width" and "height" reflects the fact that we have chosen to plot mu0 on the y axis
-	ell_plot_eg_1sig=matplotlib.patches.Ellipse(center_eg, 2*firstaxis_1sig_eg, 2*secondaxis_1sig_eg, rotate_eg, edgecolor='#FF9966', facecolor='none', label='$E_G$\n')
+	ell_plot_eg_1sig=matplotlib.patches.Ellipse(center_eg, 2*firstaxis_1sig_eg, 2*secondaxis_1sig_eg, rotate_eg, edgecolor='#FF9966', facecolor='none', label='$E_G$')
 	ell_plot_eg_2sig=matplotlib.patches.Ellipse(center_eg, 2*firstaxis_2sig_eg, 2*secondaxis_2sig_eg, rotate_eg, edgecolor='#FF9966', facecolor='none')
-	ell_plot_jp_1sig=matplotlib.patches.Ellipse(center_jp, 2*firstaxis_1sig_jp, 2*secondaxis_1sig_jp, rotate_jp, edgecolor='m', facecolor = 'none', label='Joint probes: \n $\Upsilon_{gm}$, $\Upsilon_{gg}$, $\\beta$')
+	ell_plot_jp_1sig=matplotlib.patches.Ellipse(center_jp, 2*firstaxis_1sig_jp, 2*secondaxis_1sig_jp, rotate_jp, edgecolor='m', facecolor = 'none', label='Joint probes:  $\Upsilon_{gm}$, $\Upsilon_{gg}$, $beta$')
 	ell_plot_jp_2sig=matplotlib.patches.Ellipse(center_jp, 2*firstaxis_2sig_jp, 2*secondaxis_2sig_jp, rotate_jp, edgecolor='m', facecolor = 'none')
 	ell_plot_eg_1sig.set_label('$E_G$')
 	ell.add_patch(ell_plot_eg_1sig)

@@ -1,0 +1,63 @@
+\begin{thebibliography}{}
+\makeatletter
+\relax
+\def\mn@urlcharsother{\let\do\@makeother \do\$\do\&\do\#\do\^\do\_\do\%\do\~}
+\def\mn@doi{\begingroup\mn@urlcharsother \@ifnextchar [ {\mn@doi@}
+  {\mn@doi@[]}}
+\def\mn@doi@[#1]#2{\def\@tempa{#1}\ifx\@tempa\@empty \href
+  {http://dx.doi.org/#2} {doi:#2}\else \href {http://dx.doi.org/#2} {#1}\fi
+  \endgroup}
+\def\mn@eprint#1#2{\mn@eprint@#1:#2::\@nil}
+\def\mn@eprint@arXiv#1{\href {http://arxiv.org/abs/#1} {{\tt arXiv:#1}}}
+\def\mn@eprint@dblp#1{\href {http://dblp.uni-trier.de/rec/bibtex/#1.xml}
+  {dblp:#1}}
+\def\mn@eprint@#1:#2:#3:#4\@nil{\def\@tempa {#1}\def\@tempb {#2}\def\@tempc
+  {#3}\ifx \@tempc \@empty \let \@tempc \@tempb \let \@tempb \@tempa \fi \ifx
+  \@tempb \@empty \def\@tempb {arXiv}\fi \@ifundefined
+  {mn@eprint@\@tempb}{\@tempb:\@tempc}{\expandafter \expandafter \csname
+  mn@eprint@\@tempb\endcsname \expandafter{\@tempc}}}
+
+\bibitem[\protect\citeauthoryear{{Albrecht} et~al.,}{{Albrecht}
+  et~al.}{2006}]{Albrecht2006}
+{Albrecht} A.,  et~al., 2006, arXiv e-prints, \href
+  {http://adsabs.harvard.edu/abs/2006astro.ph..9591A} {}
+
+\bibitem[\protect\citeauthoryear{Baldauf, Smith, Seljak  \& Mandelbaum}{Baldauf
+  et~al.}{2010}]{Baldauf2010}
+Baldauf T.,  Smith R.~E.,  Seljak U.,   Mandelbaum R.,  2010, Physical Review
+  D, 81
+
+\bibitem[\protect\citeauthoryear{Bassett, Fantaye, Hlozek  \& Kotze}{Bassett
+  et~al.}{2011}]{Bassett2011}
+Bassett B.~A.,  Fantaye Y.,  Hlozek R.,   Kotze J.,  2011, International
+  Journal of Modern Physics D, 20, 2559
+
+\bibitem[\protect\citeauthoryear{{Blake} et~al.,}{{Blake}
+  et~al.}{2016}]{Blake2015}
+{Blake} C.,  et~al., 2016, \mn@doi [Monthly Notices of the Royal Astronomical
+  Society] {10.1093/mnras/stv2875}, \href
+  {http://adsabs.harvard.edu/abs/2016MNRAS.456.2806B} {456, 2806}
+
+\bibitem[\protect\citeauthoryear{Jeong, Komatsu  \& Jain}{Jeong
+  et~al.}{2009}]{Jeong2009}
+Jeong D.,  Komatsu E.,   Jain B.,  2009, Physical Review D, 80, 123527
+
+\bibitem[\protect\citeauthoryear{Leonard, Baker  \& Ferreira}{Leonard
+  et~al.}{2015}]{Leonard2015}
+Leonard C.~D.,  Baker T.,   Ferreira P.~G.,  2015, Physical Review D, 91,
+  083504
+
+\bibitem[\protect\citeauthoryear{Reyes, Mandelbaum, Seljak, Baldauf, Gunn,
+  Lombriser  \& Smith}{Reyes et~al.}{2010}]{Reyes2010}
+Reyes R.,  Mandelbaum R.,  Seljak U.,  Baldauf T.,  Gunn J.~E.,  Lombriser L.,
+   Smith R.~E.,  2010, Nature, 464, 256
+
+\bibitem[\protect\citeauthoryear{{Singh}, {Mandelbaum}, {Seljak}, {Slosar}  \&
+  {Vazquez Gonzalez}}{{Singh} et~al.}{2016}]{Singh2016}
+{Singh} S.,  {Mandelbaum} R.,  {Seljak} U.,  {Slosar} A.,   {Vazquez Gonzalez}
+  J.,  2016, preprint, \href
+  {http://adsabs.harvard.edu/abs/2016arXiv161100752S} {} (\mn@eprint {arXiv}
+  {1611.00752})
+
+\makeatother
+\end{thebibliography}

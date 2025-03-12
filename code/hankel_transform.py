@@ -43,16 +43,18 @@ class hankel_transform():
                 #better by ensuring most values are <1.e-3
             k=zeros/zeros[-1]*kmax
             r=zeros/kmax
+            print('len(r)=', len(r))
+            print('r=',r)
             if min(r)>rmin:
                 kmax=min(zeros)/rmin
-                print 'changed kmax to',kmax,' to cover rmin'
+                print('changed kmax to',kmax,' to cover rmin')
                 continue
             elif max(r)<rmax:
                 n_zeros+=n_zeros_step
-                print 'j-nu=',j_nu,' not enough zeros to cover rmax, increasing by ',n_zeros_step,' to',n_zeros
+                print('j-nu=',j_nu,' not enough zeros to cover rmax, increasing by ',n_zeros_step,' to',n_zeros)
             elif min(k)>kmin:
                 n_zeros+=n_zeros_step
-                print 'j-nu=',j_nu,' not enough zeros to cover kmin, increasing by ',n_zeros_step,' to',n_zeros
+                print('j-nu=',j_nu,' not enough zeros to cover kmin, increasing by ',n_zeros_step,' to',n_zeros)
             else:
                 break
         rmin2=r[r<=rmin][-1]
@@ -60,8 +62,9 @@ class hankel_transform():
         x=r<=rmax2
         x*=r>=rmin2
         r=r[x]
+        print('r[x]=', r)
         if prune_r!=0:
-            print 'pruning r, log_space,n_f:',prune_log_space,prune_r
+            print('pruning r, log_space,n_f:',prune_log_space,prune_r)
             N=len(r)
             if prune_log_space:
                 idx=np.unique(np.int64(np.logspace(0,np.log10(N-1),N/prune_r)))#pruning can be worse than prune_r factor due to repeated numbers when logspace number are convereted to int.
@@ -70,9 +73,9 @@ class hankel_transform():
                 idx=np.arange(0,N-1,step=prune_r)
             idx=np.append(idx,[N-1])
             r=r[idx]
-            print 'pruned r:',len(r)
+            print('pruned r:',len(r))
         r=np.unique(r)
-        print 'nr:',len(r)
+        print('nr:',len(r))
         J=jn(j_nu,np.outer(r,k))
         J_nu1=jn(j_nu+1,zeros)
         return k,r,J,J_nu1,zeros
@@ -80,7 +83,8 @@ class hankel_transform():
     def pk_grid(self,k_pk=[],pk=[],j_nu=[],taper=False,**kwargs):
         if taper:
             pk=self.taper(k=k_pk,pk=pk,**kwargs)
-        if k_pk==[]:#In this case pass a function that takes k with kwargs and outputs pk
+        #if k_pk==[]:#In this case pass a function that takes k with kwargs and outputs pk
+        if len(k_pk)==0: # DL: I am changing this from above because it seems to throw an error with new versions of python.
             pk2=pk(k=self.k[j_nu],**kwargs)
         else:
             pk_int=interp1d(k_pk,pk,bounds_error=False,fill_value=0,
