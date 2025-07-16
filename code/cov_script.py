@@ -16,28 +16,32 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
     gg: galaxy-galaxy upsilon
     gm: galaxy matter upsilon
     beta, bias and f can also be given '''
-    
+
+    add_shape_noise = bool(add_shape_noise)
+
     col_dic={'f':1,'bias':2,'beta':3}
     latex_lab={'f':r'$f$','bias':r'$b$','beta':r'$\beta$'}
-
-    
-
     #load the f bias bets        
     rsdfile=data_dir+'HOD-model-5-PB00-z0.75-wsFOG.txt'
     rsd_data=np.loadtxt(rsdfile)
-    
+
     #stat_jn will hold all the measurements
     stat_jn=np.array([])
     xlab=[]
+
+    print('add shape noise=', add_shape_noise)
     
     for pp,par in enumerate(stat_list):
         #load gm if needed
         if(par in ['gm','gg']):
+            print('par=', par)
             if(par=='gm'):
-                if add_shape_noise==True:
+                print('add shapenoise =', add_shape_noise)
+                if add_shape_noise:
                     gmfile = data_dir + 'ups_gm_with_SN_'+lens+'_'+src+'.dat'
                 else:
                     gmfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
+                print('gmfile=', gmfile)
                 ups=np.loadtxt(gmfile)
             elif(par=='gg'):
                 ggfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-sel-All-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
@@ -47,7 +51,9 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
             #remove small scale upsilon not needed
             #ind=ups[:,0]>rmin
             # DL: actually, keep one more bin than the first one that doesn't contain rp0 because you might miss rp0 otherwise.
-            ind = next(j[0] for j in enumerate(ups[:,0]) if j[1]>rmin) -1
+            print('rp=', ups[:,0])
+            ind = next(j[0] for j in enumerate(ups[:,0]) if j[1]>rmin)
+            print('ind min=', ind)
             rp_ups=ups[ind:,0]
             xlab.append(rp_ups)
             ups_jn=ups[ind:,4:]
@@ -145,6 +151,7 @@ def Ups_gm_samples_with_shapenoise(sim_vol, rp0, params, lens, src, data_dir):
     """ author: Danielle
     data_dir = where we are keeping the jacknife samples from simulation.
     rp0 = the rp0 value for constructing upsilon
+    rp = the centres of the projected radial bins at which to compute Ups_gm
     sim_vol is the volume of the simulation
     lens is the lens sample, src is the src sample
     params = parameters
@@ -153,28 +160,53 @@ def Ups_gm_samples_with_shapenoise(sim_vol, rp0, params, lens, src, data_dir):
     # Load the jacknife samples and process
     gmfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
     ups=np.loadtxt(gmfile) # This has cols rp, ups mean, ups std, 'All', and the jacknife samples...
-    ups_jn=ups[:,4:]
+
     rp = ups[:,0]
+
+    rp_edg = u.rp_bin_edges_log(rp)
+
+    ind = next(j[0] for j in enumerate(rp_edg) if j[1]>rp0)
+    rp_cut = rp[ind:]
+    rp_edg_cut = rp_edg[ind:]
+
+    ups_jn=ups[ind:,4:]
+    
     #print('rp=', rp)
 
     # Get the bin edges for the rp bin centres:
-    rp_edg = u.rp_bin_edges_log(rp)
+    #rp_edg = u.rp_bin_edges_log(rp)
     #print('rp_edg=', rp_edg)
 
     Nsamps = len(ups_jn[0,:])
     #print('Nsamps=', Nsamps)
 
     # Now call the function to get Cov_SN:
-    Cov_SN_raw = sn.cov_SN_only(rp_edg, lens, src, params, rp0)
-    #print('shape Cov =', Cov_SN_raw.shape)
+    Cov_SN_raw = sn.cov_SN_only(rp_edg_cut, lens, src, params, rp0)
+    print('shape Cov =', Cov_SN_raw.shape)
+    eig, eiv = np.linalg.eig(Cov_SN_raw)
+    print('eig=', eig)
 
     # Rescale this to bring this covariance (which uses the LSST_DESI volume) in line with the simulation volume:
 
-    vol_LSST_DESI = sp.volume(params, 'LSST', 'DESI')
+    vol_LSST_DESI = sp.volume(params, src, lens)
 
-    Cov_SN = sim_vol / vol_LSST_DESI * Cov_SN_raw
+    #print('sim_vol / vol_LSST_DESI=', sim_vol / vol_LSST_DESI)
+
+    Cov_SN =  vol_LSST_DESI / sim_vol * Cov_SN_raw
 
     np.savetxt(data_dir+'/Cov_shapenoise_simsvol_MpchUnits_'+lens+'_'+src+'.dat', Cov_SN)
+
+    Corr_SN = np.zeros_like(Cov_SN)
+    for i in range(0,len(rp_cut)):
+        for j in range(0,len(rp_cut)):
+            Corr_SN[i,j]=Cov_SN[i,j]/np.sqrt(Cov_SN[i,i]*Cov_SN[j,j])
+
+    np.savetxt('../txtfiles/Corr_SN_only.dat', Corr_SN)
+
+    #plt.figure()
+    #plt.imshow(Corr_SN)
+    #plt.colorbar()
+    #plt.savefig('../plots/Corr_SN_only.pdf')
 
     #plt.figure()
     #plt.imshow(np.log10(np.abs(Cov_SN)))
@@ -189,21 +221,31 @@ def Ups_gm_samples_with_shapenoise(sim_vol, rp0, params, lens, src, data_dir):
 
     SN_samps = np.random.multivariate_normal(means, Cov_SN, Nsamps) # This should have dimensions Nsamps x rbins
 
+    print('SN_samp_shape=', SN_samps.shape)
+
     ups_with_SN = np.zeros_like(ups_jn)
+    SN_flip = np.zeros_like(ups_jn)
     for i in range(0,Nsamps):
         ups_with_SN[:,i] = ups_jn[:,i] + SN_samps[i, :]
+        SN_flip[:,i] = SN_samps[i,:]
 
-    ups_mean = np.zeros(len(rp)) 
-    ups_std = np.zeros(len(rp))
-    for i in range(0, len(rp)):
+    ups_mean = np.zeros(len(rp_cut)) 
+    ups_std = np.zeros(len(rp_cut))
+    SN_mean = np.zeros(len(rp_cut))
+    SN_std = np.zeros(len(rp_cut))
+    for i in range(0, len(rp_cut)):
         ups_mean[i] = np.mean(ups_with_SN[i,:])
         ups_std[i] = np.std(ups_with_SN[i,:])
+        SN_mean[i] = np.mean(SN_flip[i,:])
+        SN_std[i] = np.std(SN_flip[i,:])
 
 
     # Save these in the same format as the original file:
-    save_stuff = np.column_stack((rp, ups_mean, ups_std, ups_mean, ups_with_SN))
+    save_stuff = np.column_stack((rp_cut, ups_mean, ups_std, ups_mean, ups_with_SN))
+    save_stuff_SN = np.column_stack((rp_cut, SN_mean, SN_std, SN_mean, SN_flip))
 
     np.savetxt(data_dir+'/ups_gm_with_SN_'+lens+'_'+src+'.dat', save_stuff)
+    np.savetxt(data_dir+'/SN_samps_'+lens+'_'+src+'.dat', save_stuff_SN)
     return
 
 if __name__=="__main__":

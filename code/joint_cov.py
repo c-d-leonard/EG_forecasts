@@ -285,6 +285,8 @@ def shapenoiseonly_cov(params, rp_bin_edges, lens, src):
         nl = 300. # What is this number??
         Area_l = 5000.
         e_rms = 0.26
+
+        print('nl*Area_l=', nl*Area_l)
         
         # Get the area of each projected radial bin in square arcminutes
         bin_areas       =       get_areas(params, rp_bin_edges, zeff)
@@ -502,7 +504,7 @@ def cov_beta_beta(params, src, lens):
     k = np.logspace(-3, -1, 400)
     mu = np.linspace(-1, 1., 200)
     
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
     
     # Get the inverse covariance value at each k and mu
     print("Getting inverse data covariance for beta variance calculation.")
@@ -634,7 +636,7 @@ def diff_P_b(params, k, mu, lens):
     """
 	
     # Set up a ccl cosmology
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
     if (lens=='DESI'):
         zeff = 0.72
@@ -661,7 +663,7 @@ def diff_P_f(params, k, mu, lens):
     """
 	
     # Set up a ccl cosmology
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
     if (lens=='DESI'):
         zeff = 0.72
@@ -688,7 +690,7 @@ def diff_P_beta(params, k, mu, lens):
 	"""
 	
 	# Set up a ccl cosmology
-	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
 	if (lens=='DESI'):
 		zeff = 0.72
@@ -790,7 +792,7 @@ def Pobs_covinv(params, k, mu, lens):
     lens: lens sample label """	
  
     # Set up a ccl cosmology
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	
     #if (lens=='DESI' or lens=='DESI_plus_20pc' or lens=='DESI_plus_50pc'):
     #	zeff = 0.77

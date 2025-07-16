@@ -26,7 +26,7 @@ def get_DeltaSigma_covs(params, rp_bin_edges, rp_bin_c, lens, src, endfilename):
     src : label for the source sample """
 	
     # Define a ccl cosmology using params
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 
     # Set up the hankel transform we need; we will use this for all the Delta Sigma covariances.
     k = np.logspace(np.log10(10**(-4)), np.log10(30.), 5000)
@@ -70,7 +70,7 @@ def get_DeltaSigma_covs_unbinned(params, rp_bin_edges, rp_bin_c, lens, src, endf
     src : label for the source sample """
 	
     # Define a ccl cosmology using params
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 
     # Set up the hankel transform we need; we will use this for all the Delta Sigma covariances.
     k = np.logspace(np.log10(10**(-4)), np.log10(30.), 5000)
@@ -339,7 +339,7 @@ def W_ofPi_lensing(params, lens, src):
     lens : keyword for lens galaxy distribution
     src : keyword for source galaxy sample """
 	
-    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo_fid = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 	
     # The numerator is just Sigma_c averaged over lens and src distributions
     SigCavg = np.sqrt(jp.SigCsq_avg(params, lens, src)) # Units of Msol h / pc^2
@@ -397,7 +397,7 @@ def DeltaPi_gg(params, lens):
     params : dictionary of cosmological parameters
     lens: keyword for lens distribution """
 	
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 	
     if lens=='LOWZ':
         DeltaPi1 = 200. # From Singh et al. 2017
@@ -422,7 +422,7 @@ def DeltaPi_gmgg(params, lens, src):
     lens: keyword for lens distribution
     src : keyowrd for source galaxy sample """
 	
-    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], sigma8=params['sigma8'], n_s = params['n_s'])
+    cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'])
 	
     # Get W(Pi) for Delta Sigma
     (Pi, W) = W_ofPi_lensing(params, lens, src)

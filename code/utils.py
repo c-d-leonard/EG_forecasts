@@ -287,19 +287,19 @@ def linear_scale_cuts_hartlap(dvec_nl, dvec_lin, cov, rpvec, covsamps):
         # and then actually cut the one that reduces the chi2
         # the most
         chi2_temp = np.zeros(len(dvec_nl))
-        for i in range(len(dvec_nl)):
+        for i in range(0, len(dvec_nl)):
             delta_dvec = np.delete(dvec_nl, i) - np.delete(dvec_lin, i)
             cov_cut = np.delete(np.delete(cov,i, axis=0), i, axis=1)
             hartlap = (covsamps-len(delta_dvec)-2) / (covsamps-1) 
-            print('hartlap=', hartlap)
             inv_cov_cut = hartlap*np.linalg.pinv(cov_cut)
             chi2_temp[i] = np.dot(delta_dvec, np.dot(inv_cov_cut, delta_dvec))
+        print('chi2_temp=', chi2_temp)
             #sum_temp[i] = np.sum(np.delete(np.delete(sum_terms, i, axis=0), i, axis=1))
         #print('chi2_temp=', chi2_temp)
             
         #Find the index of data point that is cut to produce the smallest chi2:
         ind_min = np.argmin(chi2_temp)
-        #print('ind_min=', ind_min)
+        print('ind_min=', ind_min)
             
         # Cut that element
         dvec_nl = np.delete(dvec_nl, ind_min)
@@ -315,7 +315,7 @@ def linear_scale_cuts_hartlap(dvec_nl, dvec_lin, cov, rpvec, covsamps):
     # Use this to get the rp indices and scales we should cut.
 
     ex_inds = [i for i in range(len(dvec_nl_in)) if dvec_nl_in[i] not in dvec_nl]
-    #print('ex_inds=', ex_inds)
+    print('ex_inds=', ex_inds)
 	
     return ex_inds
 

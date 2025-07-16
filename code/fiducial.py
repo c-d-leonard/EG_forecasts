@@ -288,25 +288,27 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' 
     MG is False for GR, true to use a theory other than GR.
     MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' """
+
+    # Need to actually compute w_gg at a broader range of rp than that vector at which we will get Ups quantities
+    up_gm_noSN_file = 'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
+    ups_jk_noSN = np.loadtxt('../data_for_Danielle/'+up_gm_noSN_file)
+    # ups_jk_nSN[0,0] is the low rp limit
+    rp = np.logspace(np.log10(ups_jk_noSN[0,0]), np.log10(rp_bin_edges[-1]), 100)
+
     
-    rp = np.logspace(np.log10(rp_bin_edges[0]), np.log10(rp_bin_edges[-1]), 100)
     #print('Upsgg, rp=', rp)
     w_gg = wgg(params, rp, lens, Pimax, endfilename, nonlin=nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)
     # The above is w_gg at the new rp
 
     rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
-    wgg_interp = scipy.interpolate.interp1d(np.log(rp), np.log(w_gg))
-    w_gg_finer = np.exp(wgg_interp(np.log(rp_finer)))
+    wgg_interp = scipy.interpolate.interp1d(np.log10(rp), np.log(w_gg))
+    w_gg_finer = np.exp(wgg_interp(np.log10(rp_finer)))
     # Now it is at the finer version of rp which spans the full rp_bin edge to edge
-	
+
     # The next line get the rp_finer point which is closest a given point in the rp vector (not rp_bin_edges).
     index_rp = [next(j[0] for j in enumerate(rp_finer) if j[1]>= rp[rpi]) for rpi in range(len(rp))]  
-    #print('index_rp=', index_rp)
-    #print('rp finer at index rp=', rp_finer[index_rp])
-    #print('rp=', rp)
 
     index_rpfiner_rp0 = next(j[0] for j in enumerate(rp_finer) if j[1]>= rp0)
-    #print('index_rpfiner_rp0=', index_rpfiner_rp0)
 
     # The index range of the below was previously starting at 1 but I think this is a bit weird.
     first_term = np.zeros(len(rp))
@@ -323,11 +325,14 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
 
     # not at all convinced that rp0 is the same as rp[0] which is what the last term of the below implies.
  
-    # Find the index of rp closest to rp0:
-    index_rp0 = next(j[0] for j in enumerate(rp) if j[1]>= rp0)
+    # Find the index of rp_wgg closest to rp0:
+    #index_rp0 = next(j[0] for j in enumerate(rp_finer) if j[1]>= rp0)
     #print('index_rp0=', index_rp0)
     #print('rp[index_rp0]=', rp[index_rp0])
-    Ups_gg = rho_crit * (np.asarray(first_term) - np.asarray(w_gg) + rp0**2 / np.asarray(rp)**2 * w_gg[index_rp0]) 
+
+    # This should be computed at an rp that extends further than the exten of rp_edges
+    # It doesn't need to be particularly fine because we will upsample and interpolate in the averaging over bins below
+    Ups_gg = rho_crit * (np.asarray(first_term) - np.asarray(w_gg) + rp0**2 / np.asarray(rp)**2 * w_gg_finer[index_rpfiner_rp0]) 
     #Ups_gg = rho_crit * (np.asarray(first_term) - np.asarray(w_gg[1:]) + rp0**2 / np.asarray(rp[1:])**2 * w_gg[index_rp0]) 
 
     #plt.figure()
@@ -336,20 +341,24 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     #plt.loglog(rp[1:], rp0**2 / np.asarray(rp[1:])**2 * w_gg[index_rp0], label='third term')
     #plt.legend()
     #plt.savefig('../plots/Upggtest_3terms.pdf')
-    #plt.close()  
-
-    # test
-
-    #plt.figure()
-    #plt.loglog(rp[1:], Ups_gg)
-    #plt.savefig('../plots/Upggtest.pdf')
     #plt.close()
 
+    #plt.figure()
+    #plt.loglog(rp, Ups_gg)
+    #plt.savefig('../plots/Upggtest_unbinned.pdf')
+    #plt.close()
+
+    # rp here should cover larger than the extent of rp_bin_edges
     Ups_gg_binned = u.average_in_bins(Ups_gg, rp, rp_bin_edges)
+
+    #rp_c = u.rp_bins_mid(rp_bin_edges)
+
+    #plt.figure()
+    #plt.loglog(rp_c, Ups_gg_binned)
+    #plt.savefig('../plots/Upggtest_binned.pdf')
+    #plt.close()
 	
     return Ups_gg_binned
-
-# test
 	
 def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None):
     """ Gets Upsilon_gm in Msol h / pc^2 for a given rp0.
@@ -458,6 +467,8 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     chilow = ccl.background.comoving_radial_distance(cosmo_fid, 1./(1.+0.4)) * params['h']
     chihigh = ccl.background.comoving_radial_distance(cosmo_fid, 1./(1.+1.0)) * params['h']
     Pi_extent = chihigh - chilow
+    #print('Pi_extent=', Pi_extent)
+    
 
     Pipos = scipy.logspace(np.log10(0.0001), np.log10(Pi_extent),300)
     Pi_rev= list(Pipos)
@@ -467,9 +478,18 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     Pi = [np.append(-np.asarray(Pi_neg[zi]), Pipos) for zi in range(len(zl))]
 
     # Interpolate the correlation function in 2D (rp & Pi)
-    # What is this random choice? This is very weird. #rp = np.logspace(np.log10(rp0), np.log10(105.), 105)  
-    rp = np.logspace(np.log10(rp_bin_edges[0]), np.log10(rp_bin_edges[-1]), 100)  
-	
+    # What is this random choice? This is very weird. #rp = np.logspace(np.log10(rp0), np.log10(105.), 105)
+    # 
+    # I think we need to use rp from a much lower value here for the inner integral to enable the Delta Sigma at rp0
+    #   
+
+    # Need to actually compute w_gg at a broader range of rp than that vector at which we will get Ups quantities
+    up_gm_noSN_file = 'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
+    ups_jk_noSN = np.loadtxt('../data_for_Danielle/'+up_gm_noSN_file)
+    # ups_jk_nSN[0,0] is the low rp limit
+    #rp = np.logspace(np.log10(rp_bin_edges[0]), np.log10(rp_bin_edges[-1]), 100)  
+    rp = np.logspace(np.log10(ups_jk_noSN[0,0]), np.log10(rp_bin_edges[-1]), 100)
+
     corr_interp = [scipy.interpolate.interp1d(np.log(r), corr_gm[zi]) for zi in range(len(zl))]
     corr_rp_term = [[ corr_interp[zi](np.log(np.sqrt(rp[rpi]**2 + Pi[zi]**2))) for zi in range(len(zl))] for rpi in range(len(rp))]
 
@@ -501,8 +521,10 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     # Slight fudge in letting OmegaL0 = 1 - OmegaM0
     Sigma = [ [Sigma_MG(cosmo_fid, params['sigma_0'], 1.0 - params['OmM'], 1. / (1. + z_Pi[zli][pi])) for pi in range(len(Pi[zli]))] for zli in range(len(zl))] 
 	
-    # THIS IS WRONG - THE (1+ZL) TERM SHOULD BE (1+Z_PI). FIX ME.
-    Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (zl[zli] + 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
+    # There was a typo here previously. (1+zL) should be (1+z_Pi). Changing now - March 5 2025
+    Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (np.asarray(z_Pi[zli]) + 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
+    #Pi_int = [ [ scipy.integrate.simps( (1. + np.asarray(Sigma[zli])) * np.asarray(zs_int[zli]) / np.asarray(zs_int_w[zli]) * (chil[zli] + Pi[zli]) * (zl[zli]+ 1.) * np.asarray(corr_rp_term[rpi][zli]), Pi[zli]) for zli in range(len(zl))] for rpi in range(0, len(rp))]
+
 
     # Do the integral over zl 
     zl_int = [ scipy.integrate.simps(dNdzl * Pi_int[rpi], zl) for rpi in range(0,len(rp))]
@@ -512,16 +534,12 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
     interp_zl_int = scipy.interpolate.interp1d(np.log(rp), np.log(np.asarray(zl_int)))
     zl_int_finer = np.exp(interp_zl_int(np.log(rp_finer)))
-    #print('rp_finer=', rp_finer)
 	
     # Get the index of the previous rp vector which corresponds to this one:
     index_rp = [next(j[0] for j in enumerate(rp_finer) if j[1]>= rp[rpi]) for rpi in range(len(rp))]
-    #print('index_rp=', index_rp)
 
     # Get the index of the finer vector at rp0
     index_rpfiner_rp0 = next(j[0] for j in enumerate(rp_finer) if j[1]>= rp0)
-    #print('index_rpfiner_rp0=', index_rpfiner_rp0)
-    #print('rp0 finer=', rp_finer[index_rpfiner_rp0])
 
     first_term = np.zeros(len(rp))
     for rpi in range(0,len(rp)):
@@ -535,13 +553,23 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     #first_term = [ ( 2. / rp[rpi]**2 ) * scipy.integrate.simps(zl_int_finer[0:index_rp[rpi]] * rp_finer[0:index_rp[rpi]]**2, np.log(rp_finer[0:index_rp[rpi]])) for rpi in range(1, len(rp))]
 
     index_rp0 = next(j[0] for j in enumerate(rp) if j[1]>= rp0)
-    #print('rp0=', rp0)
-    #print('rp[index_rp0]=', rp[index_rp0])
 
     #Ups_gm = 4. * np.pi * (Gnewt * Msun) * (10**12 / c**2) / mperMpc * rho_crit * (params['OmM']) * (np.asarray(first_term) - np.asarray(zl_int)[1:] + (rp0 / np.asarray(rp[1:]))**2 * zl_int[index_rp0]) 
-    Ups_gm = 4. * np.pi * (Gnewt * Msun) * (10**12 / c**2) / mperMpc * rho_crit * (params['OmM']) * (np.asarray(first_term) - np.asarray(zl_int) + (rp0 / np.asarray(rp))**2 * zl_int[index_rp0]) 
+    Ups_gm = 4. * np.pi * (Gnewt * Msun) * (10**12 / c**2) / mperMpc * rho_crit * (params['OmM']) * (np.asarray(first_term) - np.asarray(zl_int) + (rp0 / np.asarray(rp))**2 * zl_int_finer[index_rpfiner_rp0]) 
 
     Ups_gm_binned = u.average_in_bins(Ups_gm, rp, rp_bin_edges)
+
+    #plt.figure()
+    #plt.loglog(rp, Ups_gm)
+    #plt.savefig('../plots/Ups_gm_test_unbinned.pdf')
+    #plt.close()
+
+    #rp_c = u.rp_bins_mid(rp_bin_edges)
+
+    #plt.figure()
+    #plt.loglog(rp_c, Ups_gm_binned)
+    #plt.savefig('../plots/Ups_gm_test_binned.pdf')
+    #plt.close()
 	
     return Ups_gm_binned
 	
@@ -687,7 +715,6 @@ def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False
     print('getting Upgg')
     # Get wgg and Upsilon_gg
     Upgg = Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)
-	
     print('getting Upgm')
     # Get Upsilon_gm
     Upgm = Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)

@@ -6,12 +6,13 @@ import sys
 import pyccl as ccl
 import numpy as np
 from scipy.integrate import odeint
+import scipy
 
 # nDGP NL P(k) emulator
 from nDGPemu import BoostPredictor
 
-#MODULE_PATH = "/home/danielle/Software/MGCAMB/camb/__init__.py"
-MODULE_PATH = "/home/campus.ncl.ac.uk/ncl117/Software/MGCAMB/camb/__init__.py"
+MODULE_PATH = "/home/danielle/Software/MGCAMB/camb/__init__.py"
+#MODULE_PATH = "/home/campus.ncl.ac.uk/ncl117/Software/MGCAMB/camb/__init__.py"
 MODULE_NAME = "MGCAMB"
 import importlib
 spec = importlib.util.spec_from_file_location(MODULE_NAME, MODULE_PATH)
