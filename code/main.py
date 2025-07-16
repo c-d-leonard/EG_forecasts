@@ -63,11 +63,12 @@ rp_bin_c_raw = np.loadtxt('../data_for_Danielle/test-HOD-PB00-z0.75-w1pz_cat-zRS
 rp_bin_edges_raw = u.rp_bin_edges_log(rp_bin_c_raw)
 #print(rp_bin_c_raw)
 #Cut below rp0 making sure rp0 is in the lowest bin.
-ind = next(j[0] for j in enumerate(rp_bin_edges_raw) if j[1]>rp0) - 1
+ind = next(j[0] for j in enumerate(rp_bin_edges_raw) if j[1]>rp0)
 rp_bin_edges = rp_bin_edges_raw[ind:]
 rp_bin_c_rp0 = rp_bin_c_raw[ind:]
 print('rp edges=', rp_bin_edges) 
 print('rp centres=', rp_bin_c_rp0)
+print('len rpc=', len(rp_bin_c_rp0))
 # These are even spaced in log-space. Use this fact to get the edges.
 #half_dlogrp = (np.log(rp_bin_c_raw)[1] - np.log(rp_bin_c_raw)[0])/2
 #rp_bin_edges_raw = np.exp(np.asarray([np.log(rp_bin_c_raw[0])-half_dlogrp]+[np.log(rp_bin_c_raw[i])+half_dlogrp for i in range(0,len(rp_bin_c_raw))]))
@@ -79,13 +80,24 @@ print('rp centres=', rp_bin_c_rp0)
 #rp_bin_c = rp_bin_c_raw[ind_rp0:]
 #rp0 = rp_bin_edges[0]
 
-#joint_cov = jp.get_joint_covariance(params_fid, lens, src, rp_bin_edges, rp_bin_c_rp0, rp0, endfilename)
+joint_cov = jp.get_joint_covariance(params_fid, lens, src, rp_bin_edges, rp_bin_c_rp0, rp0, endfilename)
 
-#np.savetxt('../txtfiles/joint_covariance_rp0=1.5_Oct2024.dat', joint_cov)
-#exit()
+np.savetxt('../txtfiles/joint_covariance_rp0=1.5_Jul2025_LSSTY10.dat', joint_cov)
 
 #joint_cov = np.loadtxt('../txtfiles/sims_cov_myunits_wSN_Oct24.dat')
-joint_cov = np.loadtxt('../txtfiles/sims_cov_myunits_wSN_Jan25_LSSTY10.dat')
+#joint_cov = np.loadtxt('../txtfiles/joint_covariance_rp0=1.5_Jul2025.dat')
+#joint_cov = np.loadtxt('../txtfiles/sims_cov_myunits_wSN_Jan25_LSSTY10.dat')
+
+print('joint corr shape=', joint_cov.shape)
+
+corr = np.zeros_like(joint_cov)
+for i in range(0,len(joint_cov)):
+    for j in range(0,len(joint_cov)):
+        corr[i,j] = joint_cov[i,j] / np.sqrt(joint_cov[i,i] * joint_cov[j,j])  
+
+np.savetxt('../txtfiles/joint_correlation_rp0=1.5_Jul2025_LSSTY10.dat', corr)
+exit()
+
 
 #print(rp_bin_rp0)
 #print(rp_bin_edges)
