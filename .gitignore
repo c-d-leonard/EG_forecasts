@@ -1,5 +1,3 @@
-*.dat
-*.txt
 *.pyc
 Papers/*
 code/.ipynb_checkpoints/*
