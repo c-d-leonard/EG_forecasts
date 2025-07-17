@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import pyfftlog as fft
 import pyccl.nl_pt as pt
 import MG_funcs as mg
+import gc
 
 # Constants / conversions
 mperMpc = 3.0856776*10**22
@@ -200,27 +201,27 @@ def wgg(params, rp, lens, Pimax, endfilename, nonlin = False, nl_bias = False, M
                     Pkgg_ofzl = [params['b']**2*mg.P_k_nDGP_lin(params, k, 1./(1+zl[i])) for i in range(0,len(zl))]
 
                     save_Pklin = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pklin_nDGP.dat', save_Pklin)
+                    #np.savetxt('./Pklin_nDGP.dat', save_Pklin)
 
-                    plt.figure()
-                    plt.loglog(k, Pkgg_ofzl[0])
-                    plt.title('Linear, nDGP')
-                    plt.savefig('../plots/linear_nDGP_Pk.pdf')
-                    plt.close()
+                    #plt.figure()
+                    #plt.loglog(k, Pkgg_ofzl[0])
+                    #plt.title('Linear, nDGP')
+                    #plt.savefig('../plots/linear_nDGP_Pk.pdf')
+                    #plt.close()
 
                 if nonlin == True:
                     print('in nonlinear nDGP case')
                     # Nonlinear case:
                     Pkgg_ofzl = [params['b']**2*mg.P_k_NL_nDGP(params, k, 1./(1+zl[i])) for i in range(0, len(zl))]
                     #Pkgg_ofzl = [Pkgg_ofzl_temp[i, :] for i in range(0, len(zl))]
-                    plt.figure()
-                    plt.loglog(k, Pkgg_ofzl[0])
-                    plt.title('Non-linear, nDGP')
-                    plt.savefig('../plots/nonlinear_nDGP_Pk.pdf')
-                    plt.close()
+                    #plt.figure()
+                    #plt.loglog(k, Pkgg_ofzl[0])
+                    #plt.title('Non-linear, nDGP')
+                    #plt.savefig('../plots/nonlinear_nDGP_Pk.pdf')
+                    #plt.close()
 
-                    save_Pknl = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pknl_nDGP.dat', save_Pknl)
+                    #save_Pknl = np.column_stack((k, Pkgg_ofzl[0]))
+                    #np.savetxt('./Pknl_nDGP.dat', save_Pknl)
 	
         #save_Pkgg=np.column_stack((k, Pkgg_ofzl[0]))
         #np.savetxt('../txtfiles/Pkgg_nonlin_matter='+str(nonlin)+'.dat', save_Pkgg)
@@ -299,10 +300,12 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     #print('Upsgg, rp=', rp)
     w_gg = wgg(params, rp, lens, Pimax, endfilename, nonlin=nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)
     # The above is w_gg at the new rp
+    #print('rp=', rp)
+    #print('w_gg=', w_gg)
 
     rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
-    wgg_interp = scipy.interpolate.interp1d(np.log10(rp), np.log(w_gg))
-    w_gg_finer = np.exp(wgg_interp(np.log10(rp_finer)))
+    wgg_interp = scipy.interpolate.interp1d(np.log10(rp), w_gg)
+    w_gg_finer = wgg_interp(np.log10(rp_finer))
     # Now it is at the finer version of rp which spans the full rp_bin edge to edge
 
     # The next line get the rp_finer point which is closest a given point in the rp vector (not rp_bin_edges).
@@ -356,8 +359,11 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
     #plt.figure()
     #plt.loglog(rp_c, Ups_gg_binned)
     #plt.savefig('../plots/Upggtest_binned.pdf')
-    #plt.close()
+    #plt.
+    #close()
 	
+    gc.collect()
+
     return Ups_gg_binned
 	
 def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None):
@@ -532,8 +538,8 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     # Now do the averaging over rp:
     # We need a more well-sampled rp vector for integration
     rp_finer = np.logspace(np.log10(rp[0]), np.log10(rp[-1]), 5000)
-    interp_zl_int = scipy.interpolate.interp1d(np.log(rp), np.log(np.asarray(zl_int)))
-    zl_int_finer = np.exp(interp_zl_int(np.log(rp_finer)))
+    interp_zl_int = scipy.interpolate.interp1d(np.log(rp), np.asarray(zl_int))
+    zl_int_finer = interp_zl_int(np.log(rp_finer))
 	
     # Get the index of the previous rp vector which corresponds to this one:
     index_rp = [next(j[0] for j in enumerate(rp_finer) if j[1]>= rp[rpi]) for rpi in range(len(rp))]
@@ -571,6 +577,8 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     #plt.savefig('../plots/Ups_gm_test_binned.pdf')
     #plt.close()
 	
+    gc.collect()
+
     return Ups_gm_binned
 	
 def Delta_gm(params, rp_bin_edges, lens, src, endfilename, nonlin=False):

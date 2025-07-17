@@ -11,7 +11,7 @@ import scipy
 # nDGP NL P(k) emulator
 from nDGPemu import BoostPredictor
 
-MODULE_PATH = "/home/danielle/Software/MGCAMB/camb/__init__.py"
+MODULE_PATH = "/home/ncl117/Software/MGCAMB/camb/__init__.py"
 #MODULE_PATH = "/home/campus.ncl.ac.uk/ncl117/Software/MGCAMB/camb/__init__.py"
 MODULE_NAME = "MGCAMB"
 import importlib
