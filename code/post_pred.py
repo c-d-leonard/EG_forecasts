@@ -10,29 +10,28 @@ import specs as sp
 import concurrent.futures
 import json
 from pathlib import Path
+import gc
 
 ###### HERE ARE THE SET-UP THINGS YOU MIGHT NEED TO CHANGE #######
-src = 'LSSTY10'
+src = 'LSST'
 
 # Define Gaussian uncertainty for prior distribution on OmegaM0
 # DES year 3 gives OmegaM0 = 0.339 + 0.032 - 0.031 for LCDM model. 
-#OmMerr = 0.03
+OmMerr = 0.03
 # Planck 2018 TT EE TE + lowE gives 0.3166 ± 0.0084, try this
-OmMerr = 0.0084
+#OmMerr = 0.0084
 
 grav_theory = 'fR'
 
 # nDGP
 Omega_rc = 0.5
 # f(R)
-fr0 = 10**(-6)
+fr0 = 10**(-4)
 
 # Covariance matrix:
 # Notice this is the bias-correction version.
-egcov_raw = np.loadtxt('../txtfiles/cov_EG_nLbiascorrected_Y10_Jul2025.dat')
+egcov_raw = np.loadtxt('../txtfiles/cov_EG_nLbiascorrected_Y1_Jul2025.dat')
 
-# Scale cuts
-rp_c_scalecuts, scalecuts = np.loadtxt('../txtfiles/scalecuts_nLbias_CORRECTIONFACTOR_KitanidisWhite2022_LSSTY10_Jul2025.dat', unpack=True)
 
 # SET UP A BUNCH OF STUFF.
 
@@ -94,26 +93,31 @@ N_OmMfitsamp = 10000
 
 ### FUNCTION TO RUN THE SAMPLING ONE TIME ###
 
-def run_simulation():
+def run_simulation(seed):
 
     #### GENERATE DATA REALISATION ####
 
+    rng = np.random.default_rng(seed)
     # Draw from OmegaM0 prior.
-    OmMsamp = np.random.normal(params['OmM'], OmMerr, 1)
+    #OmMsamp = np.random.normal(params['OmM'], OmMerr, 1)
+    OmMsamp = rng.normal(params['OmM'], OmMerr, 1)[0]
+    print('params[OmM]=', params['OmM'], ' OmMerr=', OmMerr)
 
     # Using this value of OmegaM0, compute corresponding E_G 
     # (we assume this has been fully corrected for nonlinear
     # bias as we cannot compute the nonlinear bias correction
     # outside GR.
-
+    print('OmMsamp=', OmMsamp)
     # Compute E_G - alter final argument different gravity theory.
-    params.update({'OmM':OmMsamp[0]})
-    EG_fid = fid.E_G(params, rp_bin_edges, rp0, lens, src, 
+    params_new = params.copy()
+    params_new['OmM'] = OmMsamp
+    EG_fid = fid.E_G(params_new, rp_bin_edges, rp0, lens, src, 
                  Pimax, endfilename, nonlin=False, MG=True, MGtheory=grav_theory)
-
+    print('EG_fid=', EG_fid)
     # Using this as a mean with Eg_cov, draw a data realisation.
-    EG_data = np.random.multivariate_normal(EG_fid, egcov, 1)
-
+    #EG_data = np.random.multivariate_normal(EG_fid, egcov, 1)
+    EG_data = rng.multivariate_normal(EG_fid, egcov, 1)
+    print('EG_data=', EG_data[0,:])
     #### FIT CONSTANT TO DATA REALISATION DRAW ####
 
     # Sample the likelihood. It's only a one dimensional parameter space so we can just grid-sample.
@@ -124,11 +128,15 @@ def run_simulation():
     for j in range(0,len(vals)):
         loglike_vals[j] = u.logL(vals[j]*np.ones(len(EG_data[0,:])), EG_data[0,:], inv_egcov)
     like_vals = np.exp(loglike_vals)
+    #print('like_vals=', like_vals)
     like_vals_norm = like_vals/ scipy.integrate.simps(like_vals, vals)
-
+    #print('like_vals_norm=', like_vals_norm)
     # Get the maximum of the posterior point of the fit to the constant, 
     max_post_ind = np.argmax(like_vals_norm)
     max_post_val = vals[max_post_ind]
+    #print('max post val=', max_post_val)
+    
+    gc.collect()
 
     # Get the chi^2
     chisq = np.dot((max_post_val - EG_data[0,:]), 
@@ -169,10 +177,14 @@ def run_simulation():
     like_vals_OmM = np.exp(loglike_vals_OmM + logP_OmM) # This version adds a prior.
     like_vals_norm_OmM = like_vals_OmM/ scipy.integrate.simps(like_vals_OmM, OmMvals)
 
+
+
     # Define a pdf on OmM from posterior values computed above.
     bin_means, bin_edges, bin_number = binned_statistic(OmMvals, like_vals_norm_OmM, statistic ='mean',bins=200)
     hist_OmM = bin_means, bin_edges
     OmMfit_dist = rv_histogram(hist_OmM, density = True) # can set density=True because normalised values.
+
+    gc.collect()
 
     #### GET REPLICATED E_G DATA UNDER GR MODEL ####
 
@@ -181,7 +193,7 @@ def run_simulation():
 
     # Get corresponding GR theory E_G values:
     EG_rep_data = fid.EG_theory(OmMfitsamps, zbar)
-
+    #print('EG_rep_data=', EG_rep_data)
     # Get distribution of GR value for E_G.
 
     EG_rep_hist = np.histogram(EG_rep_data, bins = 50, density=True)
@@ -202,22 +214,30 @@ def run_simulation():
     return const_bad_fit, outside_95
 
 
+
 def run_and_store(index):
-    result_1, result_2 = run_simulation()  
-    return {'run': index, 'const_bad_fit': result_1, 'outside_95': result_2}
+    try:
+        condition_1, condition_2 = run_simulation(seed=index)
+        return {'run':index,'const_bad_fit': condition_1, 'outside_95': condition_2}
+    except Exception as e:
+        return {'error': str(e)}
 
 def main():
-    N_RUNS = 4
-    N_WORKERS = 4
-    OUTPUT_FILE = "../txtfiles/post_pred_test.jsonl"
+    N_RUNS = 1000
+    N_WORKERS = 20
+    OUTPUT_FILE = "../txtfiles/post_pred_test_fR0-4_DESY3Prior_LSSTY1_gc_seed.jsonl"
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
-        results = executor.map(run_and_store, range(N_RUNS))
+        #results = executor.map(run_and_store, range(N_RUNS))
+        futures = [executor.submit(run_and_store, i) for i in range(N_RUNS)]
 
     # Write to newline-delimited JSON for easy incremental writing and parsing
     with open(OUTPUT_FILE, "w") as f:
-        for result in results:
-            f.write(json.dumps(result) + "\n")
+        #for result in results:
+        #    f.write(json.dumps(result) + "\n")
+        for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                f.write(json.dumps(result) + "\n")
 
 if __name__ == "__main__":
     main()
