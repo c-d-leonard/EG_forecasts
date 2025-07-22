@@ -15,16 +15,19 @@ import gc
 ###### HERE ARE THE SET-UP THINGS YOU MIGHT NEED TO CHANGE #######
 src = 'LSST'
 
+## output file
+OUTPUT_FILE = "../txtfiles/post_pred_test_Omrc0pt05_DESY3Prior_LSSTY1_gc_seed.jsonl"
+
 # Define Gaussian uncertainty for prior distribution on OmegaM0
 # DES year 3 gives OmegaM0 = 0.339 + 0.032 - 0.031 for LCDM model. 
 OmMerr = 0.03
 # Planck 2018 TT EE TE + lowE gives 0.3166 ± 0.0084, try this
 #OmMerr = 0.0084
 
-grav_theory = 'fR'
+grav_theory = 'nDGP'
 
 # nDGP
-Omega_rc = 0.5
+Omega_rc = 0.05
 # f(R)
 fr0 = 10**(-4)
 
@@ -225,7 +228,6 @@ def run_and_store(index):
 def main():
     N_RUNS = 1000
     N_WORKERS = 20
-    OUTPUT_FILE = "../txtfiles/post_pred_test_fR0-4_DESY3Prior_LSSTY1_gc_seed.jsonl"
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
         #results = executor.map(run_and_store, range(N_RUNS))

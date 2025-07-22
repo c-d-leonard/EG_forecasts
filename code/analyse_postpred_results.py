@@ -25,4 +25,4 @@ def analyze_results(filename):
     print(f"Outside 95: {condition_2_count} ({condition_2_count/total:.2%})")
     print(f"Reject GR either way: {condition_either_count} ({condition_either_count/total:.2%})")
 
-analyze_results("../txtfiles/post_pred_test_fR0-4_DESY3Prior_LSSTY1_gc_seed.jsonl")
+analyze_results("../txtfiles/post_pred_test_Omrc0pt05_DESY3Prior_LSSTY1_gc_seed.jsonl")
