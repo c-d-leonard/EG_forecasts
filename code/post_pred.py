@@ -223,9 +223,10 @@ def run_and_store(index):
         return {'error': str(e)}
 
 def main():
-    N_RUNS = 1000
-    N_WORKERS = 20
-    OUTPUT_FILE = "../txtfiles/post_pred_test_fR0-4_DESY3Prior_LSSTY1_gc_seed.jsonl"
+    N_RUNS = 1
+    N_WORKERS = 1
+    #OUTPUT_FILE = "../txtfiles/post_pred_test_fR0-5_DESY3Prior_LSSTY1_gc_seed_debug.jsonl"
+    OUTPUT_FILE = "../txtfiles/post_pred_fR0-5_debug.jsonl"
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
         #results = executor.map(run_and_store, range(N_RUNS))

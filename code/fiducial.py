@@ -172,25 +172,25 @@ def wgg(params, rp, lens, Pimax, endfilename, nonlin = False, nl_bias = False, M
                     plt.figure()
                     plt.loglog(k, Pkgg_ofzl[0])
                     plt.title('Linear, f(R)')
-                    plt.savefig('../plots/linear_fR_Pk.pdf')
+                    plt.savefig('../plots/linear_fR_Pk_'+str(params['fR0'])+'.pdf')
                     plt.close()
 
                     save_Pklin = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pklin_fR.dat', save_Pklin)
+                    np.savetxt('./Pklin_fR_'+str(params['fR0'])+'.dat', save_Pklin)
 
                     #exit()
                 elif nonlin==True:
                     #Pkgg_ofzl = [params['b']**2*mg.P_k_NL_fR(params, k, 1./(1+zl[zi])) for zi in range(len(zl))]
                     Pkgg_ofzl_temp = params['b']**2*mg.P_k_NL_fR(params, k, 1./(1+zl))
                     Pkgg_ofzl = [Pkgg_ofzl_temp[i, :] for i in range(0, len(zl))]
-                    plt.figure()
-                    plt.loglog(k, Pkgg_ofzl[0])
-                    plt.title('Non-linear, f(R)')
-                    plt.savefig('../plots/nonlinear_fR_Pk.pdf')
-                    plt.close()
+                    #plt.figure()
+                    #plt.loglog(k, Pkgg_ofzl[0])
+                    #plt.title('Non-linear, f(R)')
+                    #plt.savefig('../plots/nonlinear_fR_Pk.pdf')
+                    #plt.close()
 
-                    save_Pknl = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pknl_fR.dat', save_Pknl)
+                    #save_Pknl = np.column_stack((k, Pkgg_ofzl[0]))
+                    #np.savetxt('./Pknl_fR.dat', save_Pknl)
 
                     #exit()
             if MGtheory == 'nDGP':
@@ -366,17 +366,19 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
 
     return Ups_gg_binned
 	
-def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None):
+def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None, pz_err = False):
     """ Gets Upsilon_gm in Msol h / pc^2 for a given rp0.
     params : dictionary of parameters at which to evaluate E_G
     rp_bin_edges : edges of projected radial bins
     rp0 : scale at which we below which we cut out information for ADSD
     lens : label indicating which lens sample we are using
-    endfilename : tag for the files produced to keep track of the run.
+    endfilename : tag for the files produced to keep tradck of the run.
     nonlin(optional) : set to true if we want to use halofit nonlinear correction. 
     nl_bias (optional): set to true if we want to use nonlinear bias. This will default to perturbation theory nonlin matter also.
     MG is False for GR, true to use a theory other than GR.
-    MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' """
+    MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' 
+    pzerr is True if we include a model for photo-z uncertainty in sources,
+    False if we assume source redshifts are perfectly known."""
 	
     # Set up the fiducial cosmology.
 	
@@ -509,17 +511,29 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     z_ofChi = u.z_ofcom_func(params)
     z_Pi = [[z_ofChi(chil[zli] + Pi[zli][pi]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))] 
 
-    # Do the integral over zs
-    wSigC = specs.weights_times_SigC(params, src, zs, zl)
-    # Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
-    index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
-	 
-    zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * wSigC[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+    # Do something different here depending on if we have pz_err=True or False
+    if pz_err == False:
+        # Go ahead without doing the integral over p(z_s, z_p)
+        # Do the integral over zs
+        wSigC = specs.weights_times_SigC(params, src, zs, zl)
+        # Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
+        index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
+        zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * wSigC[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+        # Get the normalization for the weights
+        w = specs.weights(params, src,zs,zl)
+        zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+    else:
+        # Account for the p(z_s, z_p) integral
 
-    # Get the normalization for the weights
-    w = specs.weights(params, src,zs,zl)
-    zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
-	
+        # Define a vector of zp which is the same as zs (photometric redshifts)
+        zp = zs.copy()
+        print('zp=', zp)
+        wSigC = specs.weights_times_SigC(params, src, zp, zl)
+
+        
+
+
+
     # Do the integral over Pi
 	
     # Changing this to define Sigma(z directly because CCL doesn't have this functionality anymore
@@ -717,6 +731,9 @@ def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False
     MG is False for GR, true to use a theory other than GR.
     MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' """
 	
+    print('MGtheory=', MGtheory)
+    print('fR0=', params['fR0'])
+
 	# Get beta
     beta_val = beta(params, lens, MG = MG, MGtheory = MGtheory) # beta is definitionally linear so we don't need to pass it nonlin
 
