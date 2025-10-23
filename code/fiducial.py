@@ -172,25 +172,25 @@ def wgg(params, rp, lens, Pimax, endfilename, nonlin = False, nl_bias = False, M
                     plt.figure()
                     plt.loglog(k, Pkgg_ofzl[0])
                     plt.title('Linear, f(R)')
-                    plt.savefig('../plots/linear_fR_Pk.pdf')
+                    plt.savefig('../plots/linear_fR_Pk_'+str(params['fR0'])+'.pdf')
                     plt.close()
 
                     save_Pklin = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pklin_fR.dat', save_Pklin)
+                    np.savetxt('./Pklin_fR_'+str(params['fR0'])+'.dat', save_Pklin)
 
                     #exit()
                 elif nonlin==True:
                     #Pkgg_ofzl = [params['b']**2*mg.P_k_NL_fR(params, k, 1./(1+zl[zi])) for zi in range(len(zl))]
                     Pkgg_ofzl_temp = params['b']**2*mg.P_k_NL_fR(params, k, 1./(1+zl))
                     Pkgg_ofzl = [Pkgg_ofzl_temp[i, :] for i in range(0, len(zl))]
-                    plt.figure()
-                    plt.loglog(k, Pkgg_ofzl[0])
-                    plt.title('Non-linear, f(R)')
-                    plt.savefig('../plots/nonlinear_fR_Pk.pdf')
-                    plt.close()
+                    #plt.figure()
+                    #plt.loglog(k, Pkgg_ofzl[0])
+                    #plt.title('Non-linear, f(R)')
+                    #plt.savefig('../plots/nonlinear_fR_Pk.pdf')
+                    #plt.close()
 
-                    save_Pknl = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pknl_fR.dat', save_Pknl)
+                    #save_Pknl = np.column_stack((k, Pkgg_ofzl[0]))
+                    #np.savetxt('./Pknl_fR.dat', save_Pknl)
 
                     #exit()
             if MGtheory == 'nDGP':
@@ -366,17 +366,20 @@ def Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=False
 
     return Ups_gg_binned
 	
-def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None):
+def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, nl_bias = False, MG = False, MGtheory = None, pz_err = False, pz_shift=False):
     """ Gets Upsilon_gm in Msol h / pc^2 for a given rp0.
     params : dictionary of parameters at which to evaluate E_G
     rp_bin_edges : edges of projected radial bins
     rp0 : scale at which we below which we cut out information for ADSD
     lens : label indicating which lens sample we are using
-    endfilename : tag for the files produced to keep track of the run.
+    endfilename : tag for the files produced to keep tradck of the run.
     nonlin(optional) : set to true if we want to use halofit nonlinear correction. 
     nl_bias (optional): set to true if we want to use nonlinear bias. This will default to perturbation theory nonlin matter also.
     MG is False for GR, true to use a theory other than GR.
-    MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' """
+    MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' 
+    pz_err is true if we are modelling the joint probability distribution of photo- and true-z, false if not. 
+    Note: if pz_err is true and pz_shift is false, we have Gaussian model with variance but no non-fiducial shift to the mean.
+    pz_shift is true if there is a non-zero shift in the mean of the fiducial redshift distribution."""
 	
     # Set up the fiducial cosmology.
 	
@@ -509,17 +512,138 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     z_ofChi = u.z_ofcom_func(params)
     z_Pi = [[z_ofChi(chil[zli] + Pi[zli][pi]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))] 
 
-    # Do the integral over zs
-    wSigC = specs.weights_times_SigC(params, src, zs, zl)
-    # Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
-    index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
-	 
-    zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * wSigC[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+    # Do something different here depending on if we have pz_err=True or False
+    if pz_err == False and pz_shift == True:
+        print('in fiducial.py:Upsilon_gm(): we cannot have pz_err = False and pz_shift = True, exiting')
+        exit()
+    elif pz_err == False and pz_shift == False:
+        # Go ahead without doing the integral over p(z_s, z_p)
+        # Do the integral over zs
+        wSigC = specs.weights_times_SigC(params, src, zs, zl)
+        # Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
+        index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
+        zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * wSigC[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+        # Get the normalization for the weights
+        w = specs.weights(params, src,zs,zl)
+        zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+    
+    elif pz_err == True and pz_shift == True:
+        # Account for the p(z_s, z_p) integral
 
-    # Get the normalization for the weights
-    w = specs.weights(params, src,zs,zl)
-    zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
-	
+        # Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
+        index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
+        
+        # Define a vector of zp which is the same as zs (photometric redshifts) and get pz(zp,zs)
+        # Make a finer vector in zs:
+        zs_finer = np.linspace(zs[0], zs[-1], 2000)
+        zp = zs_finer.copy()
+        #print('define zp')
+        pz = specs.pz_pdf(zp, zs_finer, params['zbar'], params['sigz'])
+        #print('call pz')
+        #print('pz=', pz)
+        #print('len zp=', len(zp))
+
+        # Get the integral in the numerator
+        wSigC = specs.weights_times_SigC(params, src, zp, zl)
+        #print('got wSigC')
+        #print ('wSigC=', wSigC)
+
+        pz_int_num_fine = np.zeros((len(zs_finer), len(zl)))
+        for zsi in range(0,len(zs_finer)):
+            #print('zsi=', zsi)
+            for zli in range(0,len(zl)):
+            #    print('zli=', zli)
+                pz_int_num_fine[zsi,zli] = scipy.integrate.simps(pz[:,zsi]*wSigC[:,zli],zp)
+        #print('pz in num fine=', pz_int_num_fine)
+        # Now revert to the less fine zs vector:
+        pz_int_num = np.zeros((len(zs), len(zl)))
+        for zli in range(0,len(zl)):
+            interp_pz = scipy.interpolate.interp1d(zs_finer, pz_int_num_fine[:,zli])
+            pz_int_num[:,zli] = interp_pz(zs)
+
+        #print('pz in num=', pz_int_num)
+
+        #print('pz in num=', pz_int_num)
+        #print('got pz_int_num')
+        zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * pz_int_num[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+        #print('got zs_int')
+        #print('zs_int =', zs_int)
+        # Get the integral for the normalisation
+        w = specs.weights(params, src,zp,zl)
+        pz_int_w_fine = np.zeros((len(zs_finer), len(zl)))
+        for zsi in range(0,len(zs_finer)):
+            for zli in range(0,len(zl)):
+                pz_int_w_fine[zsi, zli] = scipy.integrate.simps(pz[:,zsi]*w[:, zli], zp)
+
+        # Now revert to the less fine zs vector:
+        pz_int_w = np.zeros((len(zs), len(zl)))
+        for zli in range(0,len(zl)):
+            interp_pz_w = scipy.interpolate.interp1d(zs_finer, pz_int_w_fine[:,zli])
+            pz_int_w[:,zli] = interp_pz_w(zs)
+              
+        zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * pz_int_w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+        #print ('zs_int_w=', zs_int_w)
+
+    elif pz_err == True and pz_shift == False:
+
+        # In this case, we ignore the shift given by params['zbar'] and only use the sigz value.
+
+        # Account for the p(z_s, z_p) integral
+
+        # Get the index of the zs vector that corresponds to zl + z(Pi) ( = z_Pi)
+        index_low = [[next(j[0] for j in enumerate(zs) if j[1]>= z_Pi[zli][pi]) for pi in range(0,len(Pi[zli]))] for zli in range(len(zl))]
+        
+        # Define a vector of zp which is the same as zs (photometric redshifts) and get pz(zp,zs)
+        # Make a finer vector in zs:
+        zs_finer = np.linspace(zs[0], zs[-1], 1000)
+        zp = zs_finer.copy()
+        #print('define zp')
+        # Set shift to 0 manually
+        pz = specs.pz_pdf(zp, zs_finer, 0, params['sigz'])
+        #print('call pz')
+        #print('pz=', pz)
+        #print('len zp=', len(zp))
+
+        # Get the integral in the numerator
+        wSigC = specs.weights_times_SigC(params, src, zp, zl)
+        #print('got wSigC')
+        #print ('wSigC=', wSigC)
+
+        pz_int_num_fine = np.zeros((len(zs_finer), len(zl)))
+        for zsi in range(0,len(zs_finer)):
+            #print('zsi=', zsi)
+            for zli in range(0,len(zl)):
+            #    print('zli=', zli)
+                pz_int_num_fine[zsi,zli] = scipy.integrate.simps(pz[:,zsi]*wSigC[:,zli],zp)
+        #print('pz in num fine=', pz_int_num_fine)
+        # Now revert to the less fine zs vector:
+        pz_int_num = np.zeros((len(zs), len(zl)))
+        for zli in range(0,len(zl)):
+            interp_pz = scipy.interpolate.interp1d(zs_finer, pz_int_num_fine[:,zli])
+            pz_int_num[:,zli] = interp_pz(zs)
+
+        #print('pz in num=', pz_int_num)
+
+        #print('pz in num=', pz_int_num)
+        #print('got pz_int_num')
+        zs_int = [ [ scipy.integrate.simps( dNdzs[index_low[zli][pi]:] * ( chis[index_low[zli][pi]:] - chil[zli] - Pi[zli][pi]) / chis[index_low[zli][pi]:] * pz_int_num[:, zli][index_low[zli][pi]:], zs[index_low[zli][pi]:]) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+        #print('got zs_int')
+        #print('zs_int =', zs_int)
+        # Get the integral for the normalisation
+        w = specs.weights(params, src,zp,zl)
+        pz_int_w_fine = np.zeros((len(zs_finer), len(zl)))
+        for zsi in range(0,len(zs_finer)):
+            for zli in range(0,len(zl)):
+                pz_int_w_fine[zsi, zli] = scipy.integrate.simps(pz[:,zsi]*w[:, zli], zp)
+
+        # Now revert to the less fine zs vector:
+        pz_int_w = np.zeros((len(zs), len(zl)))
+        for zli in range(0,len(zl)):
+            interp_pz_w = scipy.interpolate.interp1d(zs_finer, pz_int_w_fine[:,zli])
+            pz_int_w[:,zli] = interp_pz_w(zs)
+              
+        zs_int_w = [[ scipy.integrate.simps(dNdzs[index_low[zli][pi]:]  * pz_int_w[:,zli][index_low[zli][pi]:] , zs[index_low[zli][pi]:] ) for pi in range(len(Pi[zli]))] for zli in range(len(zl))]
+        #print ('zs_int_w=', zs_int_w)
     # Do the integral over Pi
 	
     # Changing this to define Sigma(z directly because CCL doesn't have this functionality anymore
@@ -578,6 +702,8 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
     #plt.close()
 	
     gc.collect()
+    
+    print('end of upsgm binned')
 
     return Ups_gm_binned
 	
@@ -704,7 +830,8 @@ def beta(params, lens, MG = False, MGtheory = None):
 	
     return beta_val
 
-def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False, nl_bias = False, MG = False, MGtheory = None):
+def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False, 
+        nl_bias = False, MG = False, MGtheory = None, pz_err = False, pz_shift=False):
     """ Returns the value of E_G given it's components.
     params : dictionary of parameters at which to evaluate E_G
     rp_bin_edges : edges of projected radial bins
@@ -715,7 +842,14 @@ def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False
 	nonlin (optional): set to true if we want to use halofit nonlinear corrections.
 	nl_bias (optional): set to true if we want to use nonlinear bias. This will default to perturbation theory nonlin matter also.
     MG is False for GR, true to use a theory other than GR.
-    MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' """
+    MGtheory gives the label for the theory / parameterisation to be used. If MG=False, MGtheory must be 'None' 
+    pz_err is true if we are modelling the joint probability distribution of photo- and true-z, false if not. 
+    Note: if pz_err is true and pz_shift is false, we have Gaussian model with variance but no non-fiducial shift to the mean.
+    pz_shift is true if there is a non-zero shift in the mean of the fiducial redshift distribution."""
+	
+    print('getting Upgm')
+    # Get Upsilon_gm
+    Upgm = Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory, pz_err = pz_err, pz_shift = pz_shift)
 	
 	# Get beta
     beta_val = beta(params, lens, MG = MG, MGtheory = MGtheory) # beta is definitionally linear so we don't need to pass it nonlin
@@ -723,10 +857,7 @@ def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False
     print('getting Upgg')
     # Get wgg and Upsilon_gg
     Upgg = Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)
-    print('getting Upgm')
-    # Get Upsilon_gm
-    Upgm = Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)
-	
+    
     if (len(Upgm)!=len(Upgg)):
         raise(ValueError, "Upsilon_gm and Upsilon_gg must be the same number of rp bins.");
 		
