@@ -66,8 +66,8 @@ bs = bs_LPT - 2./7*(b1_LPT)
 h0rc = 1./np.sqrt(4*Omega_rc)
 
 # Photo-z uncertainty parameters
-zb = 0.0 # Shift to mean of source distribution
-sz = 0.05 #
+zb = 0.00 # Shift to mean of source distribution
+sz = 0.001 #
 
 params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'fR0' : fr0, 'A_s':2.115 * 10**(-9), 'fR_n': 1, 'H0rc':h0rc, 'zbar': zb, 'sigz': sz} 
 
@@ -120,8 +120,9 @@ def run_simulation(seed):
     params_new = params.copy()
     params_new['OmM'] = OmMsamp
     EG_fid = fid.E_G(params_new, rp_bin_edges, rp0, lens, src, 
-                 Pimax, endfilename, nonlin=False, MG=True, MGtheory=grav_theory)
+                 Pimax, endfilename, nonlin=False, MG=False, MGtheory=None, pz_err=True, pz_shift=True)
     print('EG_fid=', EG_fid)
+    exit()
     # Using this as a mean with Eg_cov, draw a data realisation.
     #EG_data = np.random.multivariate_normal(EG_fid, egcov, 1)
     EG_data = rng.multivariate_normal(EG_fid, egcov, 1)
