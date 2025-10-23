@@ -11,12 +11,14 @@ import concurrent.futures
 import json
 from pathlib import Path
 import gc
+from scipy.stats import percentileofscore
 
 ###### HERE ARE THE SET-UP THINGS YOU MIGHT NEED TO CHANGE #######
-src = 'LSST'
+src = 'LSSTY10'
 
 ## output file
-OUTPUT_FILE = "../txtfiles/post_pred_test_Omrc0pt05_DESY3Prior_LSSTY1_gc_seed.jsonl"
+OUTPUT_FILE = "../txtfiles/post_pred_test_fR-4_DESY3Prior_LSSTY10_gc_seed_1run.jsonl"
+#OUTPUT_FILE = "../txtfiles/debug.jsonl"
 
 # Define Gaussian uncertainty for prior distribution on OmegaM0
 # DES year 3 gives OmegaM0 = 0.339 + 0.032 - 0.031 for LCDM model. 
@@ -24,16 +26,16 @@ OmMerr = 0.03
 # Planck 2018 TT EE TE + lowE gives 0.3166 ± 0.0084, try this
 #OmMerr = 0.0084
 
-grav_theory = 'nDGP'
+grav_theory = 'fR'
 
 # nDGP
-Omega_rc = 0.05
+Omega_rc = 0.5
 # f(R)
 fr0 = 10**(-4)
 
 # Covariance matrix:
 # Notice this is the bias-correction version.
-egcov_raw = np.loadtxt('../txtfiles/cov_EG_nLbiascorrected_Y1_Jul2025.dat')
+egcov_raw = np.loadtxt('../txtfiles/cov_EG_nLbiascorrected_Y10_Jul2025.dat')
 
 
 # SET UP A BUNCH OF STUFF.
@@ -116,11 +118,20 @@ def run_simulation(seed):
     params_new['OmM'] = OmMsamp
     EG_fid = fid.E_G(params_new, rp_bin_edges, rp0, lens, src, 
                  Pimax, endfilename, nonlin=False, MG=True, MGtheory=grav_theory)
-    print('EG_fid=', EG_fid)
+    EG_GR = fid.E_G(params_new, rp_bin_edges, rp0, lens, src,
+                 Pimax, endfilename, nonlin=False, MG=False)
+
     # Using this as a mean with Eg_cov, draw a data realisation.
     #EG_data = np.random.multivariate_normal(EG_fid, egcov, 1)
     EG_data = rng.multivariate_normal(EG_fid, egcov, 1)
-    print('EG_data=', EG_data[0,:])
+    #print('EG_data=', EG_data[0,:])
+
+
+    # Save E_G realisation and error bars
+    EG_draw = np.column_stack((rp_bin_c, EG_data[0,:], np.sqrt(np.diag(egcov))))
+    np.savetxt('../txtfiles/EG_data_realisation_fR0-4_DESY3prior_LSSTY10.dat', EG_draw)
+    print('got EG draw')
+
     #### FIT CONSTANT TO DATA REALISATION DRAW ####
 
     # Sample the likelihood. It's only a one dimensional parameter space so we can just grid-sample.
@@ -138,6 +149,9 @@ def run_simulation(seed):
     max_post_ind = np.argmax(like_vals_norm)
     max_post_val = vals[max_post_ind]
     #print('max post val=', max_post_val)
+
+    # Save the max likelihood value of E_G for this draw
+    np.savetxt('../txtfiles/EG_fit_data_realisation_fR0-4_DESY3prior_LSSTY10.dat', [max_post_val])
     
     gc.collect()
 
@@ -163,10 +177,13 @@ def run_simulation(seed):
 
     # Set to 1 where the cdf>=0.95 (corresponds to p value 0.05)
     if cdf_samps>=0.95:
+        print('const bad fit')
         const_bad_fit = 1
         # Set outside95 to 0 because we aren't even going to check that:
         outside95 = 0
-        return const_bad_fit, outside95 # No point in continuing in this case, we already know we reject GR
+        OmM_fit_mean = np.nan
+        percentile_rank = np.nan
+        return const_bad_fit, outside95, OmMsamp, OmM_fit_mean, percentile_rank # No point in continuing in this case, we already know we reject GR
     # If we get to this point it means constant was a good fit:
     const_bad_fit=0
 
@@ -180,7 +197,10 @@ def run_simulation(seed):
     like_vals_OmM = np.exp(loglike_vals_OmM + logP_OmM) # This version adds a prior.
     like_vals_norm_OmM = like_vals_OmM/ scipy.integrate.simps(like_vals_OmM, OmMvals)
 
-
+    # Save the OmM likelihood:
+    like_OmM = np.column_stack((OmMvals, like_vals_norm_OmM))
+    np.savetxt('../txtfiles/OmMlikelihood_fR0-4_DESY3prior_LSSTY10.dat', like_OmM)
+    print('got like OmM')
 
     # Define a pdf on OmM from posterior values computed above.
     bin_means, bin_edges, bin_number = binned_statistic(OmMvals, like_vals_norm_OmM, statistic ='mean',bins=200)
@@ -199,6 +219,13 @@ def run_simulation(seed):
     #print('EG_rep_data=', EG_rep_data)
     # Get distribution of GR value for E_G.
 
+    # Save EG_rep:
+    np.savetxt('../txtfiles/EG_replicated_fR0-4_DESY3prior_LSSTY10.dat', EG_rep_data)
+
+    # Calculate percentile rank of the best-fit constant E_G in the posterior predictive samples:
+    percentile_rank = percentileofscore(EG_rep_data, max_post_val, kind='rank')  # percentile in [0, 100]
+
+
     EG_rep_hist = np.histogram(EG_rep_data, bins = 50, density=True)
     EG_rep_dist = rv_histogram(EG_rep_hist, density=True)
 
@@ -214,20 +241,31 @@ def run_simulation(seed):
     else:
         outside_95 = 0
 
-    return const_bad_fit, outside_95
+    # Store diagnostics:
+    OmM_fit_mean = np.mean(OmMfitsamps)  
 
+    return const_bad_fit, outside_95, OmMsamp, OmM_fit_mean, percentile_rank
 
 
 def run_and_store(index):
     try:
-        condition_1, condition_2 = run_simulation(seed=index)
-        return {'run':index,'const_bad_fit': condition_1, 'outside_95': condition_2}
+        const_bad_fit, outside_95, OmM_true, OmM_fit_mean, percentile_rank = run_simulation(seed=50)
+        return {
+            'run': index,
+            'const_bad_fit': const_bad_fit,
+            'outside_95': outside_95,
+            'OmegaM_true': OmM_true,
+            'OmegaM_fit_mean': OmM_fit_mean,
+            'percentile_rank': percentile_rank
+        }
     except Exception as e:
-        return {'error': str(e)}
+        return {'run': index, 'error': str(e)}
 
 def main():
-    N_RUNS = 1000
-    N_WORKERS = 20
+    #N_RUNS = 300
+    #N_WORKERS = 20
+    N_RUNS = 1
+    N_WORKERS = 1
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
         #results = executor.map(run_and_store, range(N_RUNS))
