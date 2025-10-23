@@ -492,13 +492,10 @@ def pz_pdf(zp, zs, z_shift, sigz):
     zs = vector of spec-z / 'true'-z values at which to return p(zs,zp)
     z_shift = shift to the mean of the Gaussian away from zs=zp
     sigz = variance parameter of the Gaussian where variance = sigz^2(1+z_p)^2"""
-
     pzpdf = np.zeros((len(zp), len(zs)))
     for zpi in range(0,len(zp)):
           for zsj in range(0,len(zs)):
-                pzpdf_unnormed = np.exp(-(zp-(zs+z_shift)) / (2*sigz**2*(1+zp)**2))
-                # need to figure out how to normalise this and return the normalised quantity
-                print('in pz_pdf: this is not normalised, not returning anything yet. Do not use.') 
-    
-
-    return
+                pzpdf[zpi, zsj] = np.exp(-(zp[zpi]-(zs[zsj]+z_shift))**2 / (2*sigz**2*(1.0+zs[zsj])**2))
+    print('in pz_pdf: if you are using this, make sure you have tested the normalisation')
+                
+    return pzpdf
