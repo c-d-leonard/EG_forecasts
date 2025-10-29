@@ -28,20 +28,16 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
     #stat_jn will hold all the measurements
     stat_jn=np.array([])
     xlab=[]
-
-    print('add shape noise=', add_shape_noise)
     
     for pp,par in enumerate(stat_list):
         #load gm if needed
         if(par in ['gm','gg']):
             print('par=', par)
             if(par=='gm'):
-                print('add shapenoise =', add_shape_noise)
                 if add_shape_noise:
                     gmfile = data_dir + 'ups_gm_with_SN_'+lens+'_'+src+'.dat'
                 else:
                     gmfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
-                print('gmfile=', gmfile)
                 ups=np.loadtxt(gmfile)
             elif(par=='gg'):
                 ggfile=data_dir+'test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-sel-All-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon'
@@ -51,9 +47,7 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
             #remove small scale upsilon not needed
             #ind=ups[:,0]>rmin
             # DL: actually, keep one more bin than the first one that doesn't contain rp0 because you might miss rp0 otherwise.
-            print('rp=', ups[:,0])
             ind = next(j[0] for j in enumerate(ups[:,0]) if j[1]>rmin)
-            print('ind min=', ind)
             rp_ups=ups[ind:,0]
             xlab.append(rp_ups)
             ups_jn=ups[ind:,4:]
@@ -78,14 +72,6 @@ def evaluate_correlation_matrix(stat_list=['gm','beta'],rmin=2.0,plots=0,data_di
     means = np.zeros(len(stat_jn[:,0]))
     for i in range(len(stat_jn[:,0])):
         means[i] = sum(stat_jn[i,:]) / N
-
-    #plt.figure()
-    #plt.loglog(rp_ups, means[0:15])
-    #plt.loglog(rp_ups, means[15:30])
-    #plt.show()
-	
-    #print("beta=", means[30])
-    #print("shape_means=", len(means))
 		
     cov = np.zeros((len(stat_jn[:,0]), len(stat_jn[:,0])))
     for i in range(len(stat_jn[:,0])):
