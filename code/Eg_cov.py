@@ -5,6 +5,7 @@ import joint_cov as jp
 import utils as u
 import subprocess as sp
 import fiducial as fid
+import matplotlib.pyplot as plt
 
 ############# FUNCTIONS ###############
 
@@ -25,9 +26,9 @@ def get_Eg_sample(joint_cov, params, rp_bin_edges, rp_bin_c, rp0, lens, src, Pim
     beta_mean = fid.beta(params, lens)
     #rp = np.logspace(np.log10(rp0), np.log10(50.), 500)
     # Get Upsilon_gg
-    Ygg_mean = fid.Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename)
+    Ygg_mean = fid.Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin=True)
     # Get Upsilon_gm
-    Ygm_mean = fid.Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename)
+    Ygm_mean = fid.Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=True)
 	
     # We assume the data vector is listed as Upsilon_{gm}(r_p^1)..(r_p^i) ... Upsilon_{gg}(r_p^1)..(r_p^i)..beta
     Ygm_mean = np.asarray(Ygm_mean); Ygg_mean = np.asarray(Ygg_mean); beta_mean = np.asarray([beta_mean])
@@ -47,6 +48,18 @@ def get_Eg_sample(joint_cov, params, rp_bin_edges, rp_bin_c, rp0, lens, src, Pim
 
     # Get Nsamps samples from the data vector
     datavec_samps = np.random.multivariate_normal(means_list, joint_cov, Nsamps)
+
+    """plt.figure()
+    for i in range(0,Nsamps):
+        plt.loglog(rp_bin_c, datavec_samps[i,0:len(Ygm_mean)])
+    plt.savefig('../plots/upsgm_samples_JKTEST.pdf')
+    plt.close()
+
+    plt.figure()
+    for i in range(0,Nsamps):
+        plt.loglog(rp_bin_c, datavec_samps[i,len(Ygm_mean):len(Ygm_mean)+len(Ygg_mean)])
+    plt.savefig('../plots/upsgg_samples_JKTEST.pdf')
+    plt.close()"""
         
     Eg_samp = [[datavec_samps[Ns,elem] / (datavec_samps[Ns, len(Ygm_mean)+elem] * datavec_samps[Ns, len(Ygm_mean)+len(Ygg_mean)]) for Ns in range(Nsamps)] for elem in range(len(Ygm_mean))]
 	
@@ -67,21 +80,28 @@ def get_Eg_sample(joint_cov, params, rp_bin_edges, rp_bin_c, rp0, lens, src, Pim
     return Eg_samp_arr
 	
 def get_egcov(joint_cov, params, rp_bin_edges, rp_bin_c, rp0, lens, src, Pimax, Nsamps, endfilename):
-	""" Get the covariance matrix in rp bins of Eg.
-	joint_cov : joint-probes covariance matrix to be used, in Ups_gm, Ups_gg, beta order.
-	params : dictionary of parameters at which to evaluate E_G
-	rp_bin_edges : edges of projected radial bins
-	rp_bin_c : central values of projected radial bins
-	rp0 : scale at which we below which we cut out information for ADSD
-	lens : label indicating which lens sample we are using
-	Pimax : maximum integration for wgg along LOS, Mpc/h
-	Nsamps : number of samples at which to sample Eg values in estimating the covarinace.
-	endfilename : tag for the files produced to keep track of the run."""
+    """ Get the covariance matrix in rp bins of Eg.
+    joint_cov : joint-probes covariance matrix to be used, in Ups_gm, Ups_gg, beta order.
+    params : dictionary of parameters at which to evaluate E_G
+    rp_bin_edges : edges of projected radial bins
+    rp_bin_c : central values of projected radial bins
+    rp0 : scale at which we below which we cut out information for ADSD
+    lens : label indicating which lens sample we are using
+    Pimax : maximum integration for wgg along LOS, Mpc/h
+    Nsamps : number of samples at which to sample Eg values in estimating the covarinace.
+    endfilename : tag for the files produced to keep track of the run."""
 	
-	Eg_samp = get_Eg_sample(joint_cov, params, rp_bin_edges, rp_bin_c, rp0, lens, src, Pimax, Nsamps, endfilename)
-	Eg_cov = np.cov(Eg_samp)
+    Eg_samp = get_Eg_sample(joint_cov, params, rp_bin_edges, rp_bin_c, rp0, lens, src, Pimax, Nsamps, endfilename)
+    Eg_cov = np.cov(Eg_samp)
+
+    """
+    plt.figure()
+    for i in range(0,Nsamps):
+        plt.semilogx(rp_bin_c, Eg_samp[:,i])
+    plt.savefig('../plots/Egsamples.pdf')
+    plt.close()"""
 	
-	return Eg_cov
+    return Eg_cov
 
 
 def cov_bias_corr(params, bias_par_means, bias_par_cov, rp_bin_edges, rp_bin_c, rp0, lens, src, Pimax, Nsamps, endfilename):
@@ -103,12 +123,9 @@ def cov_bias_corr(params, bias_par_means, bias_par_cov, rp_bin_edges, rp_bin_c, 
     # Sample from the bias pars:
     bias_pars_samp = np.random.multivariate_normal(bias_par_means, bias_par_cov, Nsamps) # [b1,b2]
 
-    print('shape=',bias_pars_samp.shape)
-
     # Loop over the number of samples to get the correction factor at each of these.
     Cb_samps = np.zeros((len(rp_bin_c), Nsamps))
     for i in range(0,Nsamps):
-        print('sample number=', i)
         b1_LPT = bias_pars_samp[i,0]
         b2_LPT = bias_pars_samp[i,1]
         bs_LPT = 0 # Fixed to 0 in Kitinidis & White.

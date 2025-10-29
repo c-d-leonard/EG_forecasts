@@ -31,7 +31,6 @@ def cov_SN_only(rp_edg, lens, src, params, rp0):
     # Get the volume V
     V = sp.volume(params, src, lens)
 
-    print('nbar*V=', nbar*V)
 
     #print('nbar*V=', nbar*V)
 
