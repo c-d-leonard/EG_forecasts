@@ -95,7 +95,6 @@ def z_ofcom_func(params):
 	
 	cosmo = ccl.Cosmology(Omega_c = params['OmM'] - params['OmB'], Omega_b = params['OmB'], h = params['h'], A_s=params['A_s'], n_s = params['n_s'], mu_0 = params['mu_0'], sigma_0 = params['sigma_0'], matter_power_spectrum='linear')
 	com_vec =  ccl.background.comoving_radial_distance(cosmo, 1./(1.+z_vec)) * params['h']
-	print("maxchi=", np.amax(com_vec))
 
 	z_of_com = scipy.interpolate.interp1d(com_vec, z_vec)
 

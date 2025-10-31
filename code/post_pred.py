@@ -12,102 +12,39 @@ import json
 from pathlib import Path
 import gc
 from scipy.stats import percentileofscore
-
-###### HERE ARE THE SET-UP THINGS YOU MIGHT NEED TO CHANGE #######
-src = 'LSSTY10'
-
-## output file
-OUTPUT_FILE = "../txtfiles/post_pred_test_fR-4_DESY3Prior_LSSTY10_gc_seed_1run.jsonl"
-#OUTPUT_FILE = "../txtfiles/debug.jsonl"
-
-# Define Gaussian uncertainty for prior distribution on OmegaM0
-# DES year 3 gives OmegaM0 = 0.339 + 0.032 - 0.031 for LCDM model. 
-OmMerr = 0.03
-# Planck 2018 TT EE TE + lowE gives 0.3166 ± 0.0084, try this
-#OmMerr = 0.0084
-
-grav_theory = 'fR'
-
-# nDGP
-Omega_rc = 0.5
-# f(R)
-fr0 = 10**(-5)
-
-# Covariance matrix:
-# Notice this is the bias-correction version.
-egcov_raw = np.loadtxt('../txtfiles/cov_EG_nLbiascorrected_Y10_Jul2025.dat')
+import argparse
 
 
-# SET UP A BUNCH OF STUFF.
-
-# Parameters
-lens = 'DESI'
-Pimax=900.
-rp0 = 1.5
-endfilename = 'post_pred_Mar25'
-
-# Use the same cosmological parameters as Shadab's simulations:
-h=0.69
-OmB = 0.022/h**2
-OmM = 0.292
-
-# Using now nonliner bias parameters as fit in Kitanis & White 2022. 
-# They fit LTP parameters so we convert these to their Eulerian equivalents.
-b1_LPT = 1.333
-b2_LPT = 0.514
-bs_LPT = 0 # They fix this to 0.
-
-# Convert to Eulerian using the conversions in Chen, Vlah & White 2020 (these use the same convention as Kitanis & White 2022)
-b1 = 1.0 + b1_LPT
-b2 = b2_LPT + 8./21.*(b1_LPT)
-bs = bs_LPT - 2./7*(b1_LPT)
-
-# A_s value is designed to match sigma8=0.82 in LCDM for other cosmological parameters. 
-# We do this by manually finding the value of A_s that gives the right sigma8 using ccl_sigma8.
-h0rc = 1./np.sqrt(4*Omega_rc)
-
-# Photo-z uncertainty parameters
-zb = 0.0 # Shift to mean of source distribution
-sz = 0.05 #
-
-params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'fR0' : fr0, 'A_s':2.115 * 10**(-9), 'fR_n': 1, 'H0rc':h0rc, 'zbar': zb, 'sigz': sz} 
-
-# Compute the mean redshift over the lenses, we need this later:
-zvec, dNdz = sp.get_dNdzL(params, 'DESI')
-zbar = scipy.integrate.simps(zvec*dNdz, zvec)
-
-# Scale cuts. 0 means cut the bin, 1 means keep it.
-rp_bin_c_raw = np.loadtxt('../data_for_Danielle/test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon')[:,0]
-rp_bin_edges_raw = u.rp_bin_edges_log(rp_bin_c_raw)
-
-#Cut below rp0 making sure rp0 is in the lowest bin. Go one bin lower because this 
-ind = next(j[0] for j in enumerate(rp_bin_edges_raw) if j[1]>rp0)
-rp_bin_c = rp_bin_c_raw[ind:][4:]
-rp_bin_edges = rp_bin_edges_raw[ind:][4:]
-
-covsamps = 100 # Number of simulations used to estimate covariance
-egcov = egcov_raw[4:,4:]
-
-hartlap = (covsamps-len(rp_bin_c)-2) / (covsamps-1)
-inv_egcov = hartlap*np.linalg.inv(egcov)
-
-# For the fit to constant model of the E_G data realisation:
-vals = np.linspace(0.01,0.99,10000) # values at which we grid-sampl E_G constant model
-
-# For getting the posterior on OmegaM0 in the GR model:
-OmMvals = np.linspace(0.1,0.5,10000) # values at which grid sample OmegaM0
-EGvals = fid.EG_theory(OmMvals, zbar) # Get corrsponding EG values
-logP_OmM = -0.5*(OmMvals - params['OmM'])**2/(OmMerr**2) # define DES Y3 LCDM prior
-
-N_OmMfitsamp = 10000
 
 ### FUNCTION TO RUN THE SAMPLING ONE TIME ###
 
-def run_simulation(seed):
+def run_simulation(seed, sim_config):
+
+    # Unpack what we need from sim_config
+    params = sim_config["params"]
+    OmMerr = sim_config["OmMerr"]
+    rp_bin_edges = sim_config["rp_bin_edges"]
+    rp0 = sim_config["rp0"]
+    lens = sim_config["lens"]
+    src = sim_config["src"]
+    Pimax = sim_config["Pimax"]
+    endfilename = sim_config["endfilename"]
+    grav_theory = sim_config["grav_theory"]
+    egcov = sim_config["egcov"]
+    inv_egcov = sim_config["inv_egcov"]
+    vals = sim_config["vals"]
+    OmMvals = sim_config["OmMvals"]
+    EGvals = sim_config["EGvals"]
+    logP_OmM = sim_config["logP_OmM"]
+    zbar = sim_config["zbar"]
+    N_OmMfitsamp = sim_config["N_OmMfitsamp"]
+    rp_bin_c = sim_config["rp_bin_c"]
+
 
     #### GENERATE DATA REALISATION ####
 
     rng = np.random.default_rng(seed)
+
     # Draw from OmegaM0 prior.
     #OmMsamp = np.random.normal(params['OmM'], OmMerr, 1)
     OmMsamp = rng.normal(params['OmM'], OmMerr, 1)[0]
@@ -133,8 +70,8 @@ def run_simulation(seed):
 
     # Save E_G realisation and error bars
     EG_draw = np.column_stack((rp_bin_c, EG_data[0,:], np.sqrt(np.diag(egcov))))
-    np.savetxt('../txtfiles/EG_data_realisation_fR0-4_DESY3prior_LSSTY10.dat', EG_draw)
-    print('got EG draw')
+    #np.savetxt('../txtfiles/EG_data_realisation_fR0-6_DESY3prior_LSSTY1.dat', EG_draw)
+    #print('got EG draw')
 
     #### FIT CONSTANT TO DATA REALISATION DRAW ####
 
@@ -155,7 +92,7 @@ def run_simulation(seed):
     #print('max post val=', max_post_val)
 
     # Save the max likelihood value of E_G for this draw
-    np.savetxt('../txtfiles/EG_fit_data_realisation_fR0-4_DESY3prior_LSSTY10.dat', [max_post_val])
+    #np.savetxt('../txtfiles/EG_fit_data_realisation_fR0-6_DESY3prior_LSSTY1.dat', [max_post_val])
     
     gc.collect()
 
@@ -203,8 +140,8 @@ def run_simulation(seed):
 
     # Save the OmM likelihood:
     like_OmM = np.column_stack((OmMvals, like_vals_norm_OmM))
-    np.savetxt('../txtfiles/OmMlikelihood_fR0-4_DESY3prior_LSSTY10.dat', like_OmM)
-    print('got like OmM')
+    #np.savetxt('../txtfiles/OmMlikelihood_fR0-6_DESY3prior_LSSTY1.dat', like_OmM)
+    #print('got like OmM')
 
     # Define a pdf on OmM from posterior values computed above.
     bin_means, bin_edges, bin_number = binned_statistic(OmMvals, like_vals_norm_OmM, statistic ='mean',bins=200)
@@ -224,7 +161,7 @@ def run_simulation(seed):
     # Get distribution of GR value for E_G.
 
     # Save EG_rep:
-    np.savetxt('../txtfiles/EG_replicated_fR0-4_DESY3prior_LSSTY10.dat', EG_rep_data)
+    #np.savetxt('../txtfiles/EG_replicated_fR0-6_DESY3prior_LSSTY1.dat', EG_rep_data)
 
     # Calculate percentile rank of the best-fit constant E_G in the posterior predictive samples:
     percentile_rank = percentileofscore(EG_rep_data, max_post_val, kind='rank')  # percentile in [0, 100]
@@ -251,9 +188,11 @@ def run_simulation(seed):
     return const_bad_fit, outside_95, OmMsamp, OmM_fit_mean, percentile_rank
 
 
-def run_and_store(index):
+def run_and_store(index, sim_config):
+    seed = 13+ index # 13 is random, just so it isn't 0 for index 0
+
     try:
-        const_bad_fit, outside_95, OmM_true, OmM_fit_mean, percentile_rank = run_simulation(seed=50)
+        const_bad_fit, outside_95, OmM_true, OmM_fit_mean, percentile_rank = run_simulation(seed=seed, sim_config=sim_config)
         return {
             'run': index,
             'const_bad_fit': const_bad_fit,
@@ -266,14 +205,145 @@ def run_and_store(index):
         return {'run': index, 'error': str(e)}
 
 def main():
-    #N_RUNS = 300
-    #N_WORKERS = 20
-    N_RUNS = 1
-    N_WORKERS = 1
+    
+    parser = argparse.ArgumentParser(description="Read input variables.")
+    parser.add_argument("--nruns", type=int, required=True, help="Total number of simulated data realisations to run.")
+    parser.add_argument("--nworkers", type=int, required=True, help="Number of workers (i.e. cores here) to use.")
+    parser.add_argument("--outfile", type=str, required=True, help="File to output the results.")
+    parser.add_argument("--OmMerr", type=float, required=True, help="1 sigma width of the OmMerr Gaussian prior.")
+    parser.add_argument("--gravtheory", type=str, required=True, help="The true gravity theory in the simulated Universr. fR or nDGP.")
+    parser.add_argument("--gravpar", type=float, required=True, help="The value of the gravity-theory-specific parameter that we are varying. fR0 or Omega_rc as appropriate.")
+    parser.add_argument("--srcsamp", type=str, required=True, help="The source galaxy sample we are assuming. LSST or LSSTY10")
+    parser.add_argument("--covfile", type=str, required=True, help="The file containing the precomputed Eg covariance matrix.")
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
+    args = parser.parse_args()
+
+    print(args.nruns)
+
+    ###### HERE ARE THE SET-UP THINGS YOU MIGHT NEED TO CHANGE #######
+    #src = 'LSST'
+    src = args.srcsamp
+    print('src=', src)
+
+    ## output file
+    OUTPUT_FILE = args.outfile
+    print('outfile =', OUTPUT_FILE)
+
+    # Define Gaussian uncertainty for prior distribution on OmegaM0
+    # DES year 3 gives OmegaM0 = 0.339 + 0.032 - 0.031 for LCDM model. 
+    #OmMerr = 0.03
+    # Planck 2018 TT EE TE + lowE gives 0.3166 ± 0.0084, try this
+    #OmMerr = 0.0084
+    OmMerr = args.OmMerr
+    print('OmMerr=', OmMerr)
+
+    #grav_theory = 'fR'
+    grav_theory = args.gravtheory
+    print('grav_theory=', grav_theory)
+
+    # Covariance matrix:
+    # Notice this is the bias-correction version.
+    egcovfile = args.covfile
+    print('egcovfile=', egcovfile)
+    egcov_raw = np.loadtxt(egcovfile)
+
+    # SET UP A BUNCH OF STUFF.
+
+    # Parameters
+    lens = 'DESI'
+    Pimax=900.
+    rp0 = 1.5
+    endfilename = 'post_pred_Mar25'
+
+    # Use the same cosmological parameters as Shadab's simulations:
+    h=0.69
+    OmB = 0.022/h**2
+    OmM = 0.292
+
+    # Using now nonliner bias parameters as fit in Kitanis & White 2022. 
+    # They fit LTP parameters so we convert these to their Eulerian equivalents.
+    b1_LPT = 1.333
+    b2_LPT = 0.514
+    bs_LPT = 0 # They fix this to 0.
+
+    # Convert to Eulerian using the conversions in Chen, Vlah & White 2020 (these use the same convention as Kitanis & White 2022)
+    b1 = 1.0 + b1_LPT
+    b2 = b2_LPT + 8./21.*(b1_LPT)
+    bs = bs_LPT - 2./7*(b1_LPT)
+
+    if args.gravtheory=='nDGP':
+        # A_s value is designed to match sigma8=0.82 in LCDM for other cosmological parameters. 
+        #  We do this by manually finding the value of A_s that gives the right sigma8 using ccl_sigma8.
+        Omega_rc = args.gravpar
+        print('Omega_rc=', Omega_rc)
+        h0rc = 1./np.sqrt(4*Omega_rc)
+        # Have to give some dummy fR values so we don't trip an error
+        fR0= 10**(-4)
+        fRn = 1
+        params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'A_s':2.115 * 10**(-9),'H0rc':h0rc, 'fR0': fR0, 'fR_n': fR_n} 
+    elif args.gravtheory=='fR':
+        fR0 = args.gravpar
+        print('fR0=', fR0)
+        # Have to give some dummy H0rc value so we don't trip an error
+        Omega_rc = 0.25
+        h0rc = 1./np.sqrt(4*Omega_rc)
+        params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'fR0' : fR0, 'A_s':2.115 * 10**(-9), 'fR_n': 1, 'H0rc':h0rc} 
+
+
+    # Compute the mean redshift over the lenses, we need this later:
+    zvec, dNdz = sp.get_dNdzL(params, 'DESI')
+    zbar = scipy.integrate.simps(zvec*dNdz, zvec)
+
+    # Scale cuts. 0 means cut the bin, 1 means keep it.
+    rp_bin_c_raw = np.loadtxt('../data_for_Danielle/test-HOD-PB00-z0.75-w1pz_cat-zRSD-model-5-gxm-sel-crossparticles-wtag-w1-rfact10-bin1-wp-logrp-pi-NJN-100.txt.upsilon')[:,0]
+    rp_bin_edges_raw = u.rp_bin_edges_log(rp_bin_c_raw)
+
+    #Cut below rp0 making sure rp0 is in the lowest bin. Go one bin lower because this 
+    ind = next(j[0] for j in enumerate(rp_bin_edges_raw) if j[1]>rp0)
+    rp_bin_c = rp_bin_c_raw[ind:][4:]
+    rp_bin_edges = rp_bin_edges_raw[ind:][4:]
+
+    covsamps = 100 # Number of simulations used to estimate covariance
+    egcov = egcov_raw[4:,4:]
+
+    hartlap = (covsamps-len(rp_bin_c)-2) / (covsamps-1)
+    inv_egcov = hartlap*np.linalg.inv(egcov)
+
+    # For the fit to constant model of the E_G data realisation:
+    vals = np.linspace(0.01,0.99,10000) # values at which we grid-sampl E_G constant model
+
+    # For getting the posterior on OmegaM0 in the GR model:
+    OmMvals = np.linspace(0.1,0.5,10000) # values at which grid sample OmegaM0
+    EGvals = fid.EG_theory(OmMvals, zbar) # Get corrsponding EG values
+    logP_OmM = -0.5*(OmMvals - params['OmM'])**2/(OmMerr**2) # define DES Y3 LCDM prior
+
+    N_OmMfitsamp = 10000
+
+    sim_config = {
+    "params": params,
+    "OmMerr": OmMerr,
+    "rp_bin_edges": rp_bin_edges,
+    "rp0": rp0,
+    "lens": lens,
+    "src": src,
+    "Pimax": Pimax,
+    "endfilename": endfilename,
+    "grav_theory": grav_theory,
+    "egcov": egcov,
+    "inv_egcov": inv_egcov,
+    "vals": vals,
+    "OmMvals": OmMvals,
+    "EGvals": EGvals,
+    "logP_OmM": logP_OmM,
+    "zbar": zbar,
+    "N_OmMfitsamp": N_OmMfitsamp,
+    "rp_bin_c": rp_bin_c,
+}
+
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=args.nworkers) as executor:
         #results = executor.map(run_and_store, range(N_RUNS))
-        futures = [executor.submit(run_and_store, i) for i in range(N_RUNS)]
+        futures = [executor.submit(run_and_store, i, sim_config) for i in range(args.nruns)]
 
     # Write to newline-delimited JSON for easy incremental writing and parsing
     with open(OUTPUT_FILE, "w") as f:
