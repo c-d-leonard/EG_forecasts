@@ -169,14 +169,14 @@ def wgg(params, rp, lens, Pimax, endfilename, nonlin = False, nl_bias = False, M
                     #print('Pkgg lin shape =', Pkgg_ofzl_temp.shape)
                     
                     Pkgg_ofzl = [Pkgg_ofzl_temp[i, :] for i in range(0,len(zl))]
-                    plt.figure()
-                    plt.loglog(k, Pkgg_ofzl[0])
-                    plt.title('Linear, f(R)')
-                    plt.savefig('../plots/linear_fR_Pk_'+str(params['fR0'])+'.pdf')
-                    plt.close()
+                    #plt.figure()
+                    #plt.loglog(k, Pkgg_ofzl[0])
+                    #plt.title('Linear, f(R)')
+                    #plt.savefig('../plots/linear_fR_Pk_'+str(params['fR0'])+'.pdf')
+                    #plt.close()
 
-                    save_Pklin = np.column_stack((k, Pkgg_ofzl[0]))
-                    np.savetxt('./Pklin_fR_'+str(params['fR0'])+'.dat', save_Pklin)
+                    #save_Pklin = np.column_stack((k, Pkgg_ofzl[0]))
+                    #np.savetxt('./Pklin_fR_'+str(params['fR0'])+'.dat', save_Pklin)
 
                     #exit()
                 elif nonlin==True:
@@ -703,7 +703,6 @@ def Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin=False, 
 	
     gc.collect()
     
-    print('end of upsgm binned')
 
     return Ups_gm_binned
 	
@@ -847,14 +846,12 @@ def E_G(params, rp_bin_edges, rp0, lens, src, Pimax, endfilename, nonlin = False
     Note: if pz_err is true and pz_shift is false, we have Gaussian model with variance but no non-fiducial shift to the mean.
     pz_shift is true if there is a non-zero shift in the mean of the fiducial redshift distribution."""
 	
-    print('getting Upgm')
     # Get Upsilon_gm
     Upgm = Upsilon_gm(params, rp_bin_edges, rp0, lens, src, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory, pz_err = pz_err, pz_shift = pz_shift)
 	
 	# Get beta
     beta_val = beta(params, lens, MG = MG, MGtheory = MGtheory) # beta is definitionally linear so we don't need to pass it nonlin
 
-    print('getting Upgg')
     # Get wgg and Upsilon_gg
     Upgg = Upsilon_gg(params, rp_bin_edges, rp0, lens, Pimax, endfilename, nonlin = nonlin, nl_bias = nl_bias, MG = MG, MGtheory = MGtheory)
     

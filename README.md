@@ -1,13 +1,13 @@
-Scripts and notebooks used to generate results for the paper:
+## Scripts and notebooks used to generate results for the paper:
 
-General:
+### General:
 
 specs.py contains functions which specify things about the lens and source samples like theire redshift distributions etc
 utils.py contains utility functions for things like converting between bin centres and bin edges
 fiducial.py computes theoretical fiducial values of the quantities needed for the data vector
 
 
-Covariances:
+### Covariances:
 
 get_cov_sims_addSNmatrix.ipynb constructs the covariance matrix from simulations, constructs and adds the appropriate shape noise covariance matrix, and outputs the correlation matrix in the required units.
 add_shape_noise.py contains the functions to construct the shape noise covariance matrix
@@ -17,11 +17,16 @@ plot_covariances_paper.ipynb plots the covariances for the paper (joint probes a
 
 
 
-Scale cuts and nonlinear bias:
+### Scale cuts and nonlinear bias:
 
 get_linear_scale_cuts.ipynb finds the linear-only scale cuts in the case of GR with linear galaxy bias.
 get_linear_scale_cuts_MG.ipynb finds the linear-only scale cuts in the case of linear galaxy bias and in f(R) or nDGP gravity.
 get_linear_scale_cuts_nLbias.ipynb finds the linear-only scale cuts in the case of GR with nonlinear bias.
 get_linear_scale_cuts_nLbias_correction.ipynb finds the scale cuts in the case of the correction factor for nonlinear bias, including calculating the covariance matrix for the bias factor and the combined covariance matrix.
+
+### Posterior predictive tests:
+
+post_pred.py runs the posterior predictive tests and outputs the results.
+
 
 
