@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/lustre/dirac3/home/dc-leon2/eg_forecasts/EG_forecasts/code/post_pred.py", line 357, in <module>
+    main()
+  File "/lustre/dirac3/home/dc-leon2/eg_forecasts/EG_forecasts/code/post_pred.py", line 283, in main
+    params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'A_s':2.115 * 10**(-9),'H0rc':h0rc, 'fR0': fR0, 'fR_n': fR_n} 
+NameError: name 'fR_n' is not defined

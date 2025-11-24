@@ -1,0 +1,7 @@
+1000
+src= LSST
+outfile = ../txtfiles/post_pred_test_Omrc0pt05_DESY3Prior_LSSTY1_gc_seed_simscov_1000runs.json
+OmMerr= 0.03
+grav_theory= nDGP
+egcovfile= ../txtfiles/cov_EG_nLbiascorrected_Y1_simscov.dat
+Omega_rc= 0.05

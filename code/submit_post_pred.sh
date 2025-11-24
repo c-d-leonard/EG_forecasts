@@ -2,14 +2,14 @@
 
 ### Example OpenMP job ###
 
-#SBATCH --job-name=D50Y10Pl
-#SBATCH -o ../txtfiles/output/D25Y10Pl.%j
-#SBATCH -e ../txtfiles/errors/D25Y10Pl.%j
+#SBATCH --job-name=D05Y10Pl
+#SBATCH -o ../txtfiles/output/D05Y10Pl.%j
+#SBATCH -e ../txtfiles/errors/D05Y10Pl.%j
 #SBATCH -p slurm
 #SBATCH -A dp339
 
 # run for one hour, turn off all mail notifications
-#SBATCH --time=01:00:00
+#SBATCH --time=05:00:00
 #SBATCH --mail-type=NONE
 
 # 1 task with 128 cores
@@ -35,7 +35,7 @@ source ../../../Software/egforecasts/bin/activate
 
 #execute the job
 
-python post_pred.py --nruns=1000 --nworkers=128 --outfile=../txtfiles/post_pred_test_Omrc0pt5_CMBPrior_LSSTY10_gc_seed_simscov_1000runs.json --OmMerr=0.0084 --gravtheory=nDGP --gravpar=0.5 --srcsamp=LSSTY10 --covfile=../txtfiles/cov_EG_nLbiascorrected_Y10_simscov.dat
+python post_pred.py --nruns=1000 --nworkers=128 --outfile=../txtfiles/post_pred_test_Omrc0pt05_CMBPrior_LSSTY10_gc_seed_simscov_1000runs.json --OmMerr=0.0084 --gravtheory=nDGP --gravpar=0.05 --srcsamp=LSSTY10 --covfile=../txtfiles/cov_EG_nLbiascorrected_Y10_simscov.dat
 
 
 #deactivate 

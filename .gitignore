@@ -1,3 +1,10 @@
 *.pyc
 Papers/*
 code/.ipynb_checkpoints/*
+Notes/*
+beyond_wcdm_update/*
+bias_plots/*
+txtfiles/*.dat
+txtfiles/*.txt 
+plots/*.png
+plots*.pdf
