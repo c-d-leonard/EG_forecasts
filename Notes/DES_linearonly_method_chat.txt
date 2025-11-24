@@ -1,9 +1,0 @@
-huterer [4:29 PM]
-Thanks Danielle. Maybe we can also do this in parallel and compare notes.
-We came to conclusion today that the following would do the job: writing the difference as chi^2 = delta(xi)_i (Cinv)_ij delta(xi)_j, where i and j run over all datavector indices, rank order terms in the sum, then remove the largest ones until chi^2<1.
-
-Danielle Leonard [8:57 PM]
-That sounds sensible to me. So to be sure I understand, your delta(xi) here is, for a single element of the data vector, "(value using halofit) - (value using linear theory only)"?
-
-huterer [10:16 PM]
-yes. I am realizing my prescription is a bit incomplete and would have to be e.g. mildly iterated, since a fixed Cov^{-1} element is not the same for the shorter datavector as in the longer one.
