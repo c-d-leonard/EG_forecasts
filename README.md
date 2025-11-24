@@ -48,13 +48,19 @@ This repository contains the code used in the analysis of the paper 'Towards tes
 
 - get_linear_scale_cuts_nLbias_correction.ipynb finds the scale cuts in the case of the correction factor for nonlinear bias, including calculating the covariance matrix for the bias factor and the combined covariance matrix.
 
+- scale_dep_bias_correction.ipynb gets the covariance between the nonlinear bias parameters.
+
 ### Posterior predictive tests:
 
 - post_pred.py runs the posterior predictive tests and outputs the results.
 
 - analyse_postpred_results_printruns.py analyses the output of post_pred.py to calculate the number of runs in each case where we accept and accept the GR hypothesis.
 
-- baseline_forecast_GR.ipynb and baseline_forecast_GR_nLbiascorrection.ipynb were early versions of the posterior predictive check code not used in the final production of results.
+- baseline_forecast*.ipynb, forecast*.ipynb, and post_pred*.ipynb were early versions of the posterior predictive check code not used in the final production of results.
+
+### Miscellaneous
+
+- fisher.py is old code from a previous version of this project that was originally going to include Fisher forecasts.
 
 
 
