@@ -1,4 +1,4 @@
-This repository contains the code used in the analysis of the paper 'Towards testing gravity with LSST using $E_G$' (C. D. Leonard, S. Alam, S. Singh, R. Mandelbaum, M. M. Rau, C. Zanoletti for LSST DESC). 
+This repository contains the code used in the analysis of the paper 'Towards testing gravity with LSST using $E_G$' (C. D. Leonard, S. Alam, R. Mandelbaum, M. M. Rau, S. Singh, C. Zanoletti for LSST DESC). 
 
 ## Scripts and notebooks used to generate results for the paper:
 
