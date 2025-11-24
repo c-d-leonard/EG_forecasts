@@ -10,6 +10,10 @@ This repository contains the code used in the analysis of the paper 'Towards tes
 
 - fiducial.py computes theoretical fiducial values of the quantities needed for the data vector
 
+- MG_funcs.py contains functions to get matter power spectra under alternate theories of gravity. 
+
+- dNdz_plots.ipynb makes the plots of the source and lens redshift distributions.
+
 
 ### Covariances:
 
@@ -31,6 +35,8 @@ This repository contains the code used in the analysis of the paper 'Towards tes
 
 - plot_analytic_covariances_paper.ipynb plots the covariances using the analytic method to display in the appendix.
 
+- check_Gaussianity_EG.ipynb verifies that the $E_G$ samples in each $r_p$ bin is Gaussian distributed.
+
 
 ### Scale cuts and nonlinear bias:
 
@@ -48,7 +54,7 @@ This repository contains the code used in the analysis of the paper 'Towards tes
 
 - analyse_postpred_results_printruns.py analyses the output of post_pred.py to calculate the number of runs in each case where we accept and accept the GR hypothesis.
 
-- 
+- baseline_forecast_GR.ipynb and baseline_forecast_GR_nLbiascorrection.ipynb were early versions of the posterior predictive check code not used in the final production of results.
 
 
 
