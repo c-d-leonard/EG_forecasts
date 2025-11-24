@@ -1,7 +1,0 @@
-1000
-src= LSSTY10
-outfile = ../txtfiles/post_pred_test_Omrc0pt25_CMBPrior_LSSTY10_gc_seed_simscov_1000runs.json
-OmMerr= 0.0084
-grav_theory= nDGP
-egcovfile= ../txtfiles/cov_EG_nLbiascorrected_Y10_simscov.dat
-Omega_rc= 0.25
