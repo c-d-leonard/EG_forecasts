@@ -1,8 +1,0 @@
-OmB
-b
-h
-sigma_0
-OmM
-mu_0
-sigma8
-n_s

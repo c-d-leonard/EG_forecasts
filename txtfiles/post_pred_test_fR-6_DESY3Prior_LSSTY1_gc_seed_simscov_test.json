@@ -1,3 +1,0 @@
-{"run": 2, "const_bad_fit": 0, "outside_95": 0, "OmegaM_true": 0.24907380931422737, "OmegaM_fit_mean": 0.2711970869397516, "percentile_rank": 31.240000000000002}
-{"run": 0, "const_bad_fit": 0, "outside_95": 0, "OmegaM_true": 0.34680269679872266, "OmegaM_fit_mean": 0.366373188507046, "percentile_rank": 96.14}
-{"run": 1, "const_bad_fit": 1, "outside_95": 0, "OmegaM_true": 0.31286559310114503, "OmegaM_fit_mean": NaN, "percentile_rank": NaN}
