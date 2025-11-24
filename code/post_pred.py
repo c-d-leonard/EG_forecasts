@@ -59,18 +59,21 @@ def run_simulation(seed, sim_config):
     params_new['OmM'] = OmMsamp
     EG_fid = fid.E_G(params_new, rp_bin_edges, rp0, lens, src, 
                  Pimax, endfilename, nonlin=False, MG=True, MGtheory=grav_theory)
+    
+    print('EG_fid MG=', EG_fid)
+
     EG_GR = fid.E_G(params_new, rp_bin_edges, rp0, lens, src,
                  Pimax, endfilename, nonlin=False, MG=False)
 
     # Using this as a mean with Eg_cov, draw a data realisation.
     #EG_data = np.random.multivariate_normal(EG_fid, egcov, 1)
     EG_data = rng.multivariate_normal(EG_fid, egcov, 1)
-    #print('EG_data=', EG_data[0,:])
+    print('EG_data=', EG_data[0,:])
 
 
     # Save E_G realisation and error bars
     EG_draw = np.column_stack((rp_bin_c, EG_data[0,:], np.sqrt(np.diag(egcov))))
-    #np.savetxt('../txtfiles/EG_data_realisation_fR0-6_DESY3prior_LSSTY1.dat', EG_draw)
+    np.savetxt('../txtfiles/EG_data_realisation_Omrc0pt5_CMBprior_LSSTY10.dat', EG_draw)
     #print('got EG draw')
 
     #### FIT CONSTANT TO DATA REALISATION DRAW ####
@@ -92,7 +95,7 @@ def run_simulation(seed, sim_config):
     #print('max post val=', max_post_val)
 
     # Save the max likelihood value of E_G for this draw
-    #np.savetxt('../txtfiles/EG_fit_data_realisation_fR0-6_DESY3prior_LSSTY1.dat', [max_post_val])
+    np.savetxt('../txtfiles/EG_fit_data_realisation_Omrc0pt5_CMBprior_LSSTY10.dat', [max_post_val])
     
     gc.collect()
 
@@ -140,7 +143,7 @@ def run_simulation(seed, sim_config):
 
     # Save the OmM likelihood:
     like_OmM = np.column_stack((OmMvals, like_vals_norm_OmM))
-    #np.savetxt('../txtfiles/OmMlikelihood_fR0-6_DESY3prior_LSSTY1.dat', like_OmM)
+    np.savetxt('../txtfiles/OmMlikelihood_Omrc0pt5_CMBprior_LSSTY10.dat', like_OmM)
     #print('got like OmM')
 
     # Define a pdf on OmM from posterior values computed above.
@@ -161,7 +164,7 @@ def run_simulation(seed, sim_config):
     # Get distribution of GR value for E_G.
 
     # Save EG_rep:
-    #np.savetxt('../txtfiles/EG_replicated_fR0-6_DESY3prior_LSSTY1.dat', EG_rep_data)
+    np.savetxt('../txtfiles/EG_replicated_Omrc0pt5_CMBprior_LSSTY10.dat', EG_rep_data)
 
     # Calculate percentile rank of the best-fit constant E_G in the posterior predictive samples:
     percentile_rank = percentileofscore(EG_rep_data, max_post_val, kind='rank')  # percentile in [0, 100]
@@ -189,7 +192,7 @@ def run_simulation(seed, sim_config):
 
 
 def run_and_store(index, sim_config):
-    seed = 13+ index # 13 is random, just so it isn't 0 for index 0
+    seed = 13+ 3 # 13 is random, just so it isn't 0 for index 0
 
     try:
         const_bad_fit, outside_95, OmM_true, OmM_fit_mean, percentile_rank = run_simulation(seed=seed, sim_config=sim_config)
@@ -279,8 +282,7 @@ def main():
         h0rc = 1./np.sqrt(4*Omega_rc)
         # Have to give some dummy fR values so we don't trip an error
         fR0= 10**(-4)
-        fRn = 1
-        params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'A_s':2.115 * 10**(-9),'H0rc':h0rc, 'fR0': fR0, 'fR_n': fR_n} 
+        params = {'mu_0': 0., 'sigma_0':0., 'OmB':OmB, 'h':h, 'n_s':0.965,'b':b1, 'OmM': OmM, 'b_2':b2, 'b_s': bs, 'A_s':2.115 * 10**(-9),'H0rc':h0rc, 'fR0': fR0, 'fR_n': 1} 
     elif args.gravtheory=='fR':
         fR0 = args.gravpar
         print('fR0=', fR0)

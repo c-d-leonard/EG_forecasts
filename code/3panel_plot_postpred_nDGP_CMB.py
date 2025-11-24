@@ -5,10 +5,10 @@ from scipy.stats import norm
 # -----------------------------
 # File locations
 # -----------------------------
-file1 = '../txtfiles/EG_data_realisation_fR0-4_CMBprior_LSSTY10.dat'
-file2 = '../txtfiles/EG_fit_data_realisation_fR0-4_CMBprior_LSSTY10.dat'
-file3 = '../txtfiles/OmMlikelihood_fR0-4_CMBprior_LSSTY10.dat'
-file4 = '../txtfiles/EG_replicated_fR0-4_CMBprior_LSSTY10.dat'
+file1 = '../txtfiles/EG_data_realisation_Omrc0pt5_CMBprior_LSSTY10.dat'
+file2 = '../txtfiles/EG_fit_data_realisation_Omrc0pt5_CMBprior_LSSTY10.dat'
+file3 = '../txtfiles/OmMlikelihood_Omrc0pt5_CMBprior_LSSTY10.dat'
+file4 = '../txtfiles/EG_replicated_Omrc0pt5_CMBprior_LSSTY10.dat'
 
 # -----------------------------
 # Load data
@@ -53,20 +53,20 @@ axes[0].axhline(
 axes[0].set_xscale('log')
 axes[0].set_xlabel(r"$r_p$ (Mpc$/h$)")
 axes[0].set_ylabel(r"$E_G$")
-axes[0].legend()
+axes[0].legend(loc='upper left')
 ymin1, _ = axes[0].get_ylim()
-axes[0].set_ylim(ymin1, 0.37)
+axes[0].set_ylim(0.29, 0.39)
 
 # ---- Panel 2: Posterior of OmM (histogram) ----
 likeOmM_norm = likeOmM / np.trapz(likeOmM, OmM)
 n_samples = 100000
 samples = np.random.choice(OmM, size=n_samples, p=likeOmM_norm/likeOmM_norm.sum())
-samples = samples[samples <= 0.29]
+#samples = samples[samples <= 0.3]
 
 n_bins = 30
 axes[1].hist(
     samples, bins=n_bins, density=True,
-    range=(0.24, 0.29),
+    range=(0.24, 0.325),
     color=col_data, alpha=0.7, label='Posterior under GR model'
 )
 
@@ -77,13 +77,13 @@ x_prior = np.linspace(0.24, 0.325, 500)  # full tail
 y_prior = norm.pdf(x_prior, loc=mean_prior, scale=std_prior)
 axes[1].plot(x_prior, y_prior, color=col_fit, linestyle='-', linewidth=2, label='Prior')
 
-axes[1].set_xlim(0.24, 0.325)
+axes[1].set_xlim(0.25, 0.325)
 axes[1].set_xlabel(r"$\Omega_{\rm M}^{0,{\rm fit}}$")
 axes[1].set_ylabel("Density")
 axes[1].legend(loc='upper left')
 
 # Extend y-axis to 95 for legend
-axes[1].set_ylim(0, 95)
+axes[1].set_ylim(0, 80)
 
 # ---- Panel 3: Histogram of EG_rep ----
 axes[2].hist(
@@ -102,17 +102,17 @@ axes[2].axvspan(
 axes[2].set_xlabel(r"$E_G$")
 axes[2].set_ylabel("Density")
 ymin3, ymax3 = axes[2].get_ylim()
-axes[2].set_ylim(ymin3, ymax3 * 1.5)
+axes[2].set_ylim(ymin3, 100)
 axes[2].legend()
 
 # -----------------------------
 # Title and save
 # -----------------------------
 fig.suptitle(
-    r"Example realisation: $f_{R0}= 10^{-4}$, $\it{Planck}$ $\Omega_{\rm M}^0$ prior, LSST Y10 sources. GR rejected.",
+    r"Example realisation: nDGP gravity, $\Omega_{\rm rc}=0.5$, $\it{Planck}$ $\Omega_{\rm M}^0$ prior, LSST Y10 sources. GR rejected.",
     fontsize=27
 )
 
 plt.tight_layout(rect=[0, 0, 1, 0.93])
-plt.savefig("eg_3panel_fr-4_LSSTY10_CMB.pdf")
+plt.savefig("../plots/eg_3panel_Omrc0pt5_LSSTY10_CMB_simscov.pdf")
 plt.show()

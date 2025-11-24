@@ -34,4 +34,4 @@ def analyze_results(filename):
     print("Run numbers with 'outside_95':", outside_95_runs)
 
 # Call the function
-analyze_results("../txtfiles/post_pred_test_fR0-4_CMBPrior_LSSTY1_gc_seed.jsonl")
+analyze_results("../txtfiles/post_pred_test_Omrc0pt5_DESY3Prior_LSSTY10_gc_seed_simscov_1000runs.json")
